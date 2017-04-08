@@ -21,24 +21,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public abstract class Preconditions {
-
-	public static void checkArgument(boolean expression, String errorMessage) {
-		if (!expression) {
-			throw new IllegalArgumentException(errorMessage);
-		}
+	
+	private Preconditions() {
+		// no instance
 	}
 
 	public static void checkArgument(boolean expression, String errorMessage, Object... args) {
 		if (!expression) {
 			throw new IllegalArgumentException(format(errorMessage, args));
 		}
-	}
-
-	public static <T> T checkNotNull(T reference, String errorMessage) {
-		if (reference == null) {
-			throw new NullPointerException(errorMessage);
-		}
-		return reference;
 	}
 
 	public static <T> T checkNotNull(T reference, String errorMessage, Object... args) {

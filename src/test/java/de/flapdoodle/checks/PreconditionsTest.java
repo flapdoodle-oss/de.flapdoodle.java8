@@ -20,8 +20,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import de.flapdoodle.checks.Preconditions;
-
 public class PreconditionsTest {
 
 	@Test
@@ -42,5 +40,30 @@ public class PreconditionsTest {
 	@Test
 	public void oneMorePlaceholderThanArgMustGiveEmpty() {
 		assertEquals("foo bar blub <arg2>", Preconditions.format("foo %s %s %s", "bar", "blub"));
+	}
+	
+	@Test
+	public void lazyArgumentWillBeEvaluatedLazy() {
+		assertEquals("normal: A, lazy: B", Preconditions.format("normal: %s, lazy: %s", "A", Preconditions.lazy(() -> "B")));
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void argumentFalseWillFailWithIllegalArgument() {
+		Preconditions.checkArgument(false, "foo");
+	}
+	
+	@Test
+	public void argumentTrueWillNotFail() {
+		Preconditions.checkArgument(true, "foo");
+	}
+	
+	@Test(expected=NullPointerException.class)
+	public void checkNullWillFailWithIllegalArgument() {
+		Preconditions.checkNotNull(null, "foo");
+	}
+	
+	@Test
+	public void checkNonNullWillNotFail() {
+		assertEquals("blub", Preconditions.checkNotNull("blub", "foo"));
 	}
 }

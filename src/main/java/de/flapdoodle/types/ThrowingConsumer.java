@@ -23,23 +23,37 @@
  */
 package de.flapdoodle.types;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface ThrowingConsumer<T, E extends Exception> {
 	void accept(T value) throws E;
 	
-	default <N extends Exception> ThrowingConsumer<T, N> mapException(Function<Exception, N> exceptionMapper) {
+	default <N extends Exception> ThrowingConsumer<T, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
 		return (value) -> {
 			try {
 				this.accept(value);
 			} catch (Exception e) {
+				if (e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				}
 				throw exceptionMapper.apply(e);
 			}
 		};
 	}
-	
-	default ThrowingConsumer<T, RuntimeException> mapToRuntimeException() {
-		return mapException(e -> new RuntimeException(e));
-	}
 
+	default Consumer<T> onCheckedException(BiConsumer<Exception,T > exceptionToFallback) {
+		return value -> {
+			try {
+				this.accept(value);
+			}
+			catch (Exception e) {
+				if (e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				}
+				exceptionToFallback.accept(e, value);
+			}
+		};
+	}
 }

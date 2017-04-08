@@ -24,7 +24,6 @@
 package de.flapdoodle.types;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -34,16 +33,11 @@ import org.junit.Test;
 public class OptionalsTest {
 
 	@Test
-	public void mapOptionalWithThrowingFunction() {
-		try {
-			String asString = Optionals.wrap(Optional.of(2))
-				.map(i -> asString(i))
-				.get();
-			assertEquals("2", asString);
-		}
-		catch (IOException e) {
-			fail("shoud not happen");
-		}
+	public void mapOptionalWithThrowingFunction() throws IOException {
+		String asString = Optionals.wrap(Optional.of(2))
+			.map(i -> asString(i))
+			.get();
+		assertEquals("2", asString);
 	}
 
 	@Test

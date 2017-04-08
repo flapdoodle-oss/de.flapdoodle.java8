@@ -25,6 +25,14 @@ public class ThrowingSupplierTest {
 				.get());
 	}
 	
+	@Test
+	public void doNotThrowWithMappedExeptionAndFallback() {
+		assertEquals("ok", Try.supplier(ThrowingSupplierTest::supplierCouldThrowIO)
+				.mapCheckedException(RuntimeException::new)
+				.onCheckedException(ex -> "fallback")
+				.get());
+	}
+	
 	@Test(expected = IllegalArgumentException.class)
 	public void mapExeption() {
 		Try.supplier(ThrowingSupplierTest::supplierThrowingIO)
