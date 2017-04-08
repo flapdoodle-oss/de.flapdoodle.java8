@@ -33,6 +33,9 @@ public interface ThrowingRunable<E extends Exception> {
 			try {
 				this.run();
 			} catch (Exception e) {
+				if (e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				}
 				throw exceptionMapper.apply(e);
 			}
 		};
