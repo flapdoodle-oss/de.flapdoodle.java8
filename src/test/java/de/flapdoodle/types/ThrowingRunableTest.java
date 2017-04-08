@@ -16,24 +16,31 @@ public class ThrowingRunableTest {
 		Try.runable(ThrowingRunableTest::runableCouldThrowIO).run();
 	}
 
+	@Test
+	public void doNotThrowWithMappedExeption() throws IOException {
+		Try.runable(ThrowingRunableTest::runableCouldThrowIO)
+			.mapCheckedException(RuntimeException::new)
+			.run();
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void mapExeption() {
 		Try.runable(ThrowingRunableTest::runableThrowingIO)
-			.mapException(ex -> new IllegalArgumentException(ex))
+			.mapCheckedException(IllegalArgumentException::new)
 			.run();
 	}
 	
 	@Test(expected = RuntimeException.class)
 	public void mapAsRuntimeExeption() {
 		Try.runable(ThrowingRunableTest::runableThrowingIO)
-			.mapToRuntimeException()
+			.mapCheckedException(RuntimeException::new)
 			.run();
 	}
 	
 	@Test(expected = CustomRuntimeException.class)
 	public void dontRemapRuntimeExeption() {
 		Try.runable(ThrowingRunableTest::runableCouldThrowIOButThrowsRuntime)
-			.mapException(ex -> new IllegalArgumentException(ex))
+			.mapCheckedException(IllegalArgumentException::new)
 			.run();
 	}
 	
@@ -52,10 +59,6 @@ public class ThrowingRunableTest {
 			throw new IOException("should fail");
 		}
 		throw new CustomRuntimeException();
-	}
-
-	static class CustomRuntimeException extends RuntimeException {
-		
 	}
 
 }

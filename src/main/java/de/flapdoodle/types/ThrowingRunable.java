@@ -28,7 +28,7 @@ import java.util.function.Function;
 public interface ThrowingRunable<E extends Exception> {
 	void run() throws E;
 	
-	default <N extends Exception> ThrowingRunable<N> mapException(Function<Exception, N> exceptionMapper) {
+	default <N extends Exception> ThrowingRunable<N> mapCheckedException(Function<Exception, N> exceptionMapper) {
 		return () -> {
 			try {
 				this.run();
@@ -40,9 +40,4 @@ public interface ThrowingRunable<E extends Exception> {
 			}
 		};
 	}
-	
-	default ThrowingRunable<RuntimeException> mapToRuntimeException() {
-		return mapException(e -> new RuntimeException(e));
-	}
-
 }

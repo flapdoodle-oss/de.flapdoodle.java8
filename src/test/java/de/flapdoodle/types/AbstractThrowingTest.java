@@ -21,17 +21,6 @@ public abstract class AbstractThrowingTest {
 		return "ok "+src;
 	}
 
-	protected static String supplierThrowingIO() throws IOException {
-		throw new IOException("should fail");
-	}
-
-	protected static String supplierCouldThrowIO() throws IOException {
-		if (false) {
-			throw new IOException("should fail");
-		}
-		return "ok";
-	}
-
 	protected static void consumerThrowingIO(String src) throws IOException {
 		if (src.equals("fail")) {
 			throw new IOException("should fail");

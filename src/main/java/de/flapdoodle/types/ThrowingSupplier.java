@@ -29,26 +29,28 @@ import java.util.function.Supplier;
 public interface ThrowingSupplier<T, E extends Exception> {
 	T get() throws E;
 	
-	default <N extends Exception> ThrowingSupplier<T, N> mapException(Function<Exception, N> exceptionMapper) {
+	default <N extends Exception> ThrowingSupplier<T, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
 		return () -> {
 			try {
 				return this.get();
 			} catch (Exception e) {
+				if (e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				}
 				throw exceptionMapper.apply(e);
 			}
 		};
 	}
 	
-	default ThrowingSupplier<T, RuntimeException> mapToRuntimeException() {
-		return mapException(e -> new RuntimeException(e));
-	}
-	
-	default Supplier<T> onException(Function<Exception, T> exceptionToFallback) {
+	default Supplier<T> onCheckedException(Function<Exception, T> exceptionToFallback) {
 		return () -> {
 			try {
 				return this.get();
 			}
 			catch (Exception e) {
+				if (e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				}
 				return exceptionToFallback.apply(e);
 			}
 		};
