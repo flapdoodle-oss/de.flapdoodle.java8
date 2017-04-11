@@ -34,4 +34,19 @@ public abstract class Try {
 		return runable;
 	}
 
+	public static <T, R> R apply(ThrowingFunction<T, R, ? extends Exception> function, T value) {
+		return function.mapCheckedException(RuntimeException::new).apply(value);
+	}
+	
+	public static <T> T get(ThrowingSupplier<T, ? extends Exception> supplier) {
+		return supplier.mapCheckedException(RuntimeException::new).get();
+	}
+	
+	public static <T> void accept(ThrowingConsumer<T, ? extends Exception> consumer, T value) {
+		consumer.mapCheckedException(RuntimeException::new).accept(value);
+	}
+	
+	public static void run(ThrowingRunable<? extends Exception> runable) {
+		runable.mapCheckedException(RuntimeException::new).run();
+	}
 }
