@@ -58,10 +58,8 @@ public abstract class Preconditions {
 				last = matcher.end();
 			}
 			sb.append(message.substring(last));
-			if (currentArg < args.length) {
-				for (int i = currentArg; i < args.length; i++) {
-					sb.append(",").append(asObject(args[i]));
-				}
+			for (int i = currentArg; i < args.length; i++) {
+				sb.append(",").append(asObject(args[i]));
 			}
 			return sb.toString();
 		}

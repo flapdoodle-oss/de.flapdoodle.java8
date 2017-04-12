@@ -28,10 +28,20 @@ public class PreconditionsTest {
 	}
 
 	@Test
+	public void emptyArgsWithPlaceholderMustGiveMessage() {
+		assertEquals("foo %s", Preconditions.format("foo %s"));
+	}
+	
+	@Test
 	public void oneArgMustGiveMessageWithArg() {
 		assertEquals("foo bar", Preconditions.format("foo %s", "bar"));
 	}
 
+	@Test
+	public void oneArgWithoutPlaceholderMustGiveMessage() {
+		assertEquals("foo,bar", Preconditions.format("foo", "bar"));
+	}
+	
 	@Test
 	public void oneMoreArgThanPlaceholderMustGiveArgAppendedToTheEnd() {
 		assertEquals("foo bar,blub", Preconditions.format("foo %s", "bar", "blub"));
