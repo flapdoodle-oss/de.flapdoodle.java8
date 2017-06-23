@@ -36,6 +36,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 
 		<immutables.version>2.4.3</immutables.version>
+		<m2e.apt.activation>jdt_apt</m2e.apt.activation>
 	</properties>
 
 	<!-- https://docs.sonatype.org/display/Repository/Central+Sync+Requirements 
