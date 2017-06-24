@@ -16,6 +16,7 @@
  */
 package de.flapdoodle.checks;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,6 +36,13 @@ public abstract class Preconditions {
 	public static <T> T checkNotNull(T reference, String errorMessage, Object... args) {
 		if (reference == null) {
 			throw new NullPointerException(format(errorMessage, args));
+		}
+		return reference;
+	}
+
+	public static <T> Optional<T> checkPresent(Optional<T> reference, String errorMessage, Object... args) {
+		if (!reference.isPresent()) {
+			throw new IllegalArgumentException(format(errorMessage, args));
 		}
 		return reference;
 	}

@@ -18,6 +18,8 @@ package de.flapdoodle.checks;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Optional;
+
 import org.junit.Test;
 
 public class PreconditionsTest {
@@ -70,6 +72,21 @@ public class PreconditionsTest {
 	@Test(expected=NullPointerException.class)
 	public void checkNullWillFailWithIllegalArgument() {
 		Preconditions.checkNotNull(null, "foo");
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void checkPresentWillFailWithIllegalArgument() {
+		Preconditions.checkPresent(Optional.empty(), "foo");
+	}
+	
+	@Test
+	public void checkNullWillSuccessWithValue() {
+		assertEquals("bar", Preconditions.checkNotNull("bar", "foo"));
+	}
+	
+	@Test
+	public void checkPresentWillSuccessWithPresentValue() {
+		assertEquals("bar", Preconditions.checkPresent(Optional.of("bar"), "foo").get());
 	}
 	
 	@Test
