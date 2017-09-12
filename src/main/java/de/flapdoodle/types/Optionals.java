@@ -17,30 +17,29 @@
 package de.flapdoodle.types;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public abstract class Optionals {
 
 	public static <S,D, E extends Exception> Optional<D> map(Optional<S> source, ThrowingFunction<? super S, ? extends D, E> mapper) throws E {
-		return source.isPresent() 
-				? Optional.of(mapper.apply(source.get())) 
+		return source.isPresent()
+				? Optional.of(mapper.apply(source.get()))
 				: Optional.empty();
 	}
-	
+
 	public static <D, E extends Exception> D orElseGet(Optional<D> current, ThrowingSupplier<? extends D, E> supplier) throws E {
-		return current.isPresent() 
-				? current.get() 
+		return current.isPresent()
+				? current.get()
 				: supplier.get();
 	}
-	
-	public static <T> Wrapper<T> wrap(Optional<T> wrapped) {
+
+	public static <T> Wrapper<T> with(Optional<T> wrapped) {
 		return new Wrapper<>(wrapped);
 	}
-	
+
 	public static class Wrapper<T> {
-		
+
 		private final Optional<T> wrapped;
 
 		public Wrapper(Optional<T> wrapped) {
@@ -55,27 +54,31 @@ public abstract class Optionals {
 			return wrapped.isPresent();
 		}
 
-		public <E extends Exception> void ifPresent(Consumer<? super T> consumer) {
-			wrapped.ifPresent(consumer);
-		}
-		
-		public <E extends Exception> void ifPresent(ThrowingConsumer<? super T, E> consumer) throws E {
+		public <E extends Exception> Wrapper<T> ifPresent(ThrowingConsumer<? super T, E> consumer) throws E {
 			if (wrapped.isPresent()) {
 				consumer.accept(wrapped.get());
 			}
+			return this;
+		}
+
+		public <E extends Exception> Wrapper<T> ifAbsent(ThrowingRunable<E> runable) throws E {
+			if (!wrapped.isPresent()) {
+				runable.run();
+			}
+			return this;
 		}
 
 		public Wrapper<T> filter(Predicate<? super T> predicate) {
-			return wrap(wrapped.filter(predicate));
+			return with(wrapped.filter(predicate));
 		}
 
 		public <U, E extends Exception> Wrapper<U> map(ThrowingFunction<? super T, ? extends U, E> mapper) throws E {
-			return wrap(Optionals.map(wrapped, mapper));
+			return with(Optionals.map(wrapped, mapper));
 		}
 
 		public <U, E extends Exception> Wrapper<U> flatMap(ThrowingFunction<? super T, Optional<U>, E> mapper) throws E {
 			Optional<Optional<U>> mapped = Optionals.map(wrapped, mapper);
-			return wrap(mapped.isPresent() ? mapped.get() : Optional.empty());
+			return with(mapped.isPresent() ? mapped.get() : Optional.empty());
 		}
 
 		public T orElse(T other) {
@@ -104,7 +107,7 @@ public abstract class Optionals {
 		public String toString() {
 			return "Wrapped("+wrapped.toString()+")";
 		}
-		
-		
+
+
 	}
 }
