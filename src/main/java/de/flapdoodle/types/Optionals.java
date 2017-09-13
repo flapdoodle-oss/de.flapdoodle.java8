@@ -19,6 +19,9 @@ package de.flapdoodle.types;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import de.flapdoodle.checks.Preconditions;
 
 public abstract class Optionals {
 
@@ -34,6 +37,10 @@ public abstract class Optionals {
 				: supplier.get();
 	}
 
+	public static <T> Stream<T> streamOf(Optional<T> src) {
+		return src.isPresent() ? Stream.of(src.get()) : Stream.empty();
+	}
+
 	public static <T> Wrapper<T> with(Optional<T> wrapped) {
 		return new Wrapper<>(wrapped);
 	}
@@ -42,8 +49,8 @@ public abstract class Optionals {
 
 		private final Optional<T> wrapped;
 
-		public Wrapper(Optional<T> wrapped) {
-			this.wrapped = wrapped;
+		public Wrapper(Optional<T> src) {
+			this.wrapped = Preconditions.checkNotNull(src,"src is null");
 		}
 
 		public T get() {
@@ -93,9 +100,25 @@ public abstract class Optionals {
 			return wrapped.orElseThrow(exceptionSupplier);
 		}
 
+		public Stream<T> stream() {
+			return streamOf(wrapped);
+		}
+
 		@Override
 		public boolean equals(Object obj) {
-			return obj.getClass() == this.getClass() && wrapped.equals(obj);
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Wrapper other = (Wrapper) obj;
+			if (wrapped == null) {
+				if (other.wrapped != null)
+					return false;
+			} else if (!wrapped.equals(other.wrapped))
+				return false;
+			return true;
 		}
 
 		@Override
