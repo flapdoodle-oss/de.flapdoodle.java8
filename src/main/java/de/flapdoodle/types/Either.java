@@ -17,6 +17,7 @@
 package de.flapdoodle.types;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.immutables.value.Value;
 import org.immutables.value.Value.Auxiliary;
@@ -43,7 +44,24 @@ public abstract class Either<L, R> {
 	public R right() {
 		return optRight().get();
 	}
-	
+
+	public <T> Either<T, R> mapLeft(Function<L, T> transformation) {
+		return isLeft()
+			? Either.left(transformation.apply(left()))
+			: (Either<T,R>) this;
+	}
+
+	public <T> Either<L, T> mapRight(Function<R, T> transformation) {
+		return isLeft()
+			? (Either<L,T>) this
+			: Either.right(transformation.apply(right()));
+	}
+
+	public <T> T map(Function<L, T> leftTransformation, Function<R, T> rightTransformation) {
+		Either<T, T> mapped = mapLeft(leftTransformation).mapRight(rightTransformation);
+		return mapped.isLeft() ? mapped.left() : mapped.right();
+	}
+
 	@Check
 	protected void check() {
 		if (optLeft().isPresent() && optRight().isPresent()) {
