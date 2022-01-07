@@ -16,26 +16,32 @@
  */
 package de.flapdoodle.types;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 
 public class ThrowingConsumerTest {
 
-	private final AtomicReference<String> consumerCalledWith=new AtomicReference();
-	
+	private final AtomicReference<String> consumerCalledWith=new AtomicReference<>();
+	private final AtomicReference<String> finallyCalledWith=new AtomicReference<>();
+
 	@Before
 	public void cleanConsumerCalledWithReference() {
 		consumerCalledWith.set(null);
 	}
 	
-	@Test(expected = IOException.class)
-	public void throwsExpectedExeption() throws IOException {
-		Try.consumer(this::consumerThrowingIO).accept("fail");
+	@Test
+	public void throwsExpectedExeption() {
+		assertThatThrownBy(() -> Try.consumer(this::consumerThrowingIO).accept("fail"))
+			.isInstanceOf(IOException.class);
+		assertThat(consumerCalledWith.get()).isEqualTo("fail");
 	}
 
 	@Test
@@ -55,46 +61,87 @@ public class ThrowingConsumerTest {
 	@Test
 	public void doNotThrowWithFallback() {
 		Try.consumer(this::consumerThrowingIO)
-				.onCheckedException((ex,v) -> { consumerCalledWith.set("fallback "+v);})
+				.onCheckedException((ex,v) -> consumerCalledWith.set("fallback "+v))
 				.accept("ok");
 		assertEquals("ok", consumerCalledWith.get());
 	}
 	
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void mapExeption() {
-		Try.consumer(this::consumerThrowingIO)
+		assertThatThrownBy(() -> Try.consumer(this::consumerThrowingIO)
 			.mapCheckedException(IllegalArgumentException::new)
-			.accept("fail");
+			.accept("fail"))
+			.isInstanceOf(IllegalArgumentException.class);
+
+		assertEquals("fail", consumerCalledWith.get());
 	}
 	
-	@Test(expected = RuntimeException.class)
+	@Test
 	public void mapAsRuntimeExeption() {
-		Try.consumer(this::consumerThrowingIO)
+		assertThatThrownBy(() -> Try.consumer(this::consumerThrowingIO)
 			.mapCheckedException(RuntimeException::new)
-			.accept("fail");
+			.accept("fail"))
+			.isInstanceOf(RuntimeException.class);
+
+		assertEquals("fail", consumerCalledWith.get());
 	}
 	
-	@Test(expected = CustomRuntimeException.class)
+	@Test
 	public void dontRemapRuntimeExeption() {
-		Try.consumer(this::consumerCouldThrowIOButThrowsRuntime)
+		assertThatThrownBy(() -> Try.consumer(this::consumerCouldThrowIOButThrowsRuntime)
 			.mapCheckedException(IllegalArgumentException::new)
-			.accept("noop");
+			.accept("noop"))
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertEquals("noop", consumerCalledWith.get());
 	}
 	
 	@Test
 	public void mapExceptionToFallback() {
 		Try.consumer(this::consumerThrowingIO)
-			.onCheckedException((ex,v) -> { consumerCalledWith.set("fallback "+v);})
+			.onCheckedException((ex,v) -> consumerCalledWith.set("fallback "+v))
 			.accept("fail");
 		assertEquals("fallback fail", consumerCalledWith.get());
 	}
-	
-	@Test(expected = CustomRuntimeException.class)
+
+	@Test
+	public void runFinallyIfExeptionIsThrown() {
+		assertThatThrownBy(() -> Try.consumer(this::consumerThrowingIO)
+			.andFinally(() -> finallyCalledWith.set("finally"))
+			.accept("fail"))
+			.isInstanceOf(IOException.class);
+		assertThat(consumerCalledWith.get()).isEqualTo("fail");
+		assertThat(finallyCalledWith.get()).isEqualTo("finally");
+	}
+
+	@Test
+	public void runFinallyIfNoExeption() throws IOException {
+		Try.consumer(this::consumerThrowingIO)
+			.andFinally(() -> finallyCalledWith.set("finally"))
+			.accept("ok");
+		assertEquals("ok", consumerCalledWith.get());
+		assertThat(finallyCalledWith.get()).isEqualTo("finally");
+	}
+
+	@Test
+	public void runBothFinallyIfNoExeption() throws IOException {
+		Try.consumer(this::consumerThrowingIO)
+			.andFinally(() -> finallyCalledWith.set("finally"))
+			.andFinally(() -> finallyCalledWith.set("second finally"))
+			.accept("ok");
+		assertEquals("ok", consumerCalledWith.get());
+		assertThat(finallyCalledWith.get()).isEqualTo("second finally");
+	}
+
+	@Test
 	public void doesNotMapExceptionToFallbackBecauseOfRuntimeException() {
-		Try.consumer(this::consumerCouldThrowIOButThrowsRuntime)
+		assertThatThrownBy(() -> Try.consumer(this::consumerCouldThrowIOButThrowsRuntime)
 			.mapCheckedException(IllegalArgumentException::new)
 			.onCheckedException((ex,v) -> {})
-			.accept("noop");
+			.accept("noop"))
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertEquals("noop", consumerCalledWith.get());
 	}
 	
 	protected void consumerThrowingIO(String src) throws IOException {

@@ -16,82 +16,144 @@
  */
 package de.flapdoodle.types;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 public class ThrowingFunctionTest {
+	private final AtomicReference<String> functionCalledWith=new AtomicReference<>();
+	private final AtomicReference<String> finallyCalledWith=new AtomicReference<>();
 
-	@Test(expected = IOException.class)
-	public void throwsExpectedExeption() throws IOException {
-		Try.function(ThrowingFunctionTest::functionThrowingIO).apply("fail");
+	@Test
+	public void throwsExpectedExeption() {
+		assertThatThrownBy(() -> Try.function(this::functionThrowingIO).apply("fail"))
+			.isInstanceOf(IOException.class);
+
+		assertThat(functionCalledWith.get()).isEqualTo("fail");
 	}
 
 	@Test
 	public void doNotThrowExeption() throws IOException {
-		assertEquals("ok ok", Try.function(ThrowingFunctionTest::functionThrowingIO).apply("ok"));
+		assertThat(Try.function(this::functionThrowingIO).apply("ok")).isEqualTo("ok ok");
+
+		assertThat(functionCalledWith.get()).isEqualTo("ok");
 	}
 
 	@Test
 	public void doNotThrowWithMappedExeption() {
-		assertEquals("ok ok", Try.function(ThrowingFunctionTest::functionThrowingIO)
+		assertThat(Try.function(this::functionThrowingIO)
 				.mapCheckedException(RuntimeException::new)
-				.apply("ok"));
+				.apply("ok")).isEqualTo("ok ok");
+
+		assertThat(functionCalledWith.get()).isEqualTo("ok");
 	}
 	
 	@Test
 	public void doNotThrowWithFallback() {
-		assertEquals("ok ok", Try.function(ThrowingFunctionTest::functionThrowingIO)
+		assertThat(Try.function(this::functionThrowingIO)
 				.onCheckedException((ex,v) -> "fallback "+v)
-				.apply("ok"));
+				.apply("ok")).isEqualTo("ok ok");
+
+		assertThat(functionCalledWith.get()).isEqualTo("ok");
 	}
 	
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void mapExeption() {
-		Try.function(ThrowingFunctionTest::functionThrowingIO)
+		assertThatThrownBy(() -> Try.function(this::functionThrowingIO)
 			.mapCheckedException(IllegalArgumentException::new)
-			.apply("fail");
+			.apply("fail"))
+			.isInstanceOf(IllegalArgumentException.class);
+
+		assertThat(functionCalledWith.get()).isEqualTo("fail");
 	}
 	
-	@Test(expected = RuntimeException.class)
+	@Test
 	public void mapAsRuntimeExeption() {
-		Try.function(ThrowingFunctionTest::functionThrowingIO)
+		assertThatThrownBy(() -> Try.function(this::functionThrowingIO)
 			.mapCheckedException(RuntimeException::new)
-			.apply("fail");
+			.apply("fail"))
+			.isInstanceOf(RuntimeException.class);
+
+		assertThat(functionCalledWith.get()).isEqualTo("fail");
 	}
 	
-	@Test(expected = CustomRuntimeException.class)
+	@Test
 	public void dontRemapRuntimeExeption() {
-		Try.function(ThrowingFunctionTest::functionCouldThrowIOButThrowsRuntime)
+		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
 			.mapCheckedException(IllegalArgumentException::new)
-			.apply("noop");
+			.apply("noop"))
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertThat(functionCalledWith.get()).isEqualTo("noop");
 	}
 	
 	@Test
 	public void mapExceptionToFallback() {
-		assertEquals("fallback fail", Try.function(ThrowingFunctionTest::functionThrowingIO)
+		assertThat(Try.function(this::functionThrowingIO)
 			.onCheckedException((ex,v) -> "fallback "+v)
-			.apply("fail"));
+			.apply("fail"))
+			.isEqualTo("fallback fail");
+
+		assertThat(functionCalledWith.get()).isEqualTo("fail");
 	}
 	
-	@Test(expected = CustomRuntimeException.class)
+	@Test
 	public void doesNotMapExceptionToFallbackBecauseOfRuntimeException() {
-		Try.function(ThrowingFunctionTest::functionCouldThrowIOButThrowsRuntime)
+		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
 			.mapCheckedException(IllegalArgumentException::new)
 			.onCheckedException((ex,v) -> "fallback "+v)
-			.apply("noop");
+			.apply("noop"))
+			.isInstanceOf(CustomRuntimeException.class);
+	}
+
+	@Test
+	public void callFinallyIfThrowsExeption() {
+		assertThatThrownBy(() -> Try.function(this::functionThrowingIO)
+			.andFinally(() -> finallyCalledWith.set("finally"))
+			.apply("fail"))
+			.isInstanceOf(IOException.class);
+
+		assertThat(functionCalledWith.get()).isEqualTo("fail");
+		assertThat(finallyCalledWith.get()).isEqualTo("finally");
+	}
+
+	@Test
+	public void callFinallyIfNoExeption() throws IOException {
+		assertThat(Try.function(this::functionThrowingIO)
+			.andFinally(() -> finallyCalledWith.set("finally"))
+			.apply("ok")).isEqualTo("ok ok");
+
+		assertThat(functionCalledWith.get()).isEqualTo("ok");
+		assertThat(finallyCalledWith.get()).isEqualTo("finally");
+	}
+
+	@Test
+	public void callAllFinallyIfNoExeption() throws IOException {
+		assertThat(Try.function(this::functionThrowingIO)
+			.andFinally(() -> finallyCalledWith.set("finally"))
+			.andFinally(() -> finallyCalledWith.set("second finally"))
+			.apply("ok")).isEqualTo("ok ok");
+
+		assertThat(functionCalledWith.get()).isEqualTo("ok");
+		assertThat(finallyCalledWith.get()).isEqualTo("second finally");
 	}
 	
-	protected static String functionThrowingIO(String src) throws IOException {
+	protected String functionThrowingIO(String src) throws IOException {
+		functionCalledWith.set(src);
 		if (src.equals("fail")) {
 			throw new IOException("should fail");
 		}
 		return "ok "+src;
 	}
 
-	private static String functionCouldThrowIOButThrowsRuntime(String src) throws IOException {
+	private String functionCouldThrowIOButThrowsRuntime(String src) throws IOException {
+		functionCalledWith.set(src);
 		if (false) {
 			throw new IOException("should fail");
 		}

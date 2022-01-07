@@ -16,75 +16,163 @@
  */
 package de.flapdoodle.types;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 public class ThrowingSupplierTest {
 
-	@Test(expected = IOException.class)
-	public void throwsExpectedExeption() throws IOException {
-		Try.supplier(ThrowingSupplierTest::supplierThrowingIO).get();
+	@Test
+	public void throwsExpectedExeption() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
+
+		assertThatThrownBy(Try.supplier(supplier)::get)
+			.isInstanceOf(IOException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
 
 	@Test
 	public void doNotThrowExeption() throws IOException {
-		assertEquals("ok", Try.supplier(ThrowingSupplierTest::supplierCouldThrowIO).get());
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
+		
+		assertThat(Try.supplier(supplier).get()).isEqualTo("ok");
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
 
 	@Test
 	public void doNotThrowWithMappedExeption() {
-		assertEquals("ok", Try.supplier(ThrowingSupplierTest::supplierCouldThrowIO)
-				.mapCheckedException(RuntimeException::new)
-				.get());
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
+
+		assertThat(Try.supplier(supplier)
+			.mapCheckedException(RuntimeException::new)
+			.get()).isEqualTo("ok");
+		
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
 	
 	@Test
 	public void doNotThrowWithMappedExeptionAndFallback() {
-		assertEquals("ok", Try.supplier(ThrowingSupplierTest::supplierCouldThrowIO)
-				.mapCheckedException(RuntimeException::new)
-				.onCheckedException(ex -> "fallback")
-				.get());
-	}
-	
-	@Test(expected = IllegalArgumentException.class)
-	public void mapExeption() {
-		Try.supplier(ThrowingSupplierTest::supplierThrowingIO)
-			.mapCheckedException(IllegalArgumentException::new)
-			.get();
-	}
-	
-	@Test(expected = RuntimeException.class)
-	public void mapAsRuntimeExeption() {
-		Try.supplier(ThrowingSupplierTest::supplierThrowingIO)
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
+
+		assertThat(Try.supplier(supplier)
 			.mapCheckedException(RuntimeException::new)
-			.get();
+			.onCheckedException(ex -> "fallback")
+			.get()).isEqualTo("ok");
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
 	
-	@Test(expected = CustomRuntimeException.class)
-	public void dontRemapRuntimeExeption() {
-		Try.supplier(ThrowingSupplierTest::supplierCouldThrowIOButThrowsRuntime)
+	@Test
+	public void mapExeption() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
+
+		assertThatThrownBy(Try.supplier(supplier)
 			.mapCheckedException(IllegalArgumentException::new)
-			.get();
+			::get)
+			.isInstanceOf(IllegalArgumentException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+	}
+	
+	@Test
+	public void mapAsRuntimeExeption() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
+
+		assertThatThrownBy(Try.supplier(supplier)
+			.mapCheckedException(RuntimeException::new)
+			::get)
+			.isInstanceOf(RuntimeException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+	}
+	
+	@Test
+	public void dontRemapRuntimeExeption() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIOButThrowsRuntime);
+
+		assertThatThrownBy(Try.supplier(supplier)
+			.mapCheckedException(IllegalArgumentException::new)
+			::get)
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
 	
 	@Test
 	public void mapExceptionToFallback() {
-		assertEquals("fallback", Try.supplier(ThrowingSupplierTest::supplierThrowingIO)
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
+
+		assertThat(Try.supplier(supplier)
 			.onCheckedException(ex -> "fallback")
-			.get());
+			.get())
+			.isEqualTo("fallback");
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
 	
-	@Test(expected = CustomRuntimeException.class)
+	@Test
 	public void doesNotMapExceptionToFallbackBecauseOfRuntimeException() {
-		Try.supplier(ThrowingSupplierTest::supplierCouldThrowIOButThrowsRuntime)
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIOButThrowsRuntime);
+
+		assertThatThrownBy(Try.supplier(supplier)
 			.mapCheckedException(IllegalArgumentException::new)
 			.onCheckedException(ex -> "fallback")
-			.get();
+			::get)
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
-	
+
+	@Test
+	public void callFinallyIfThrowsExeption() {
+		AtomicInteger finallyCounter = new AtomicInteger();
+
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
+
+		assertThatThrownBy(Try.supplier(supplier)
+			.andFinally(finallyCounter::incrementAndGet)::get)
+			.isInstanceOf(IOException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+		assertThat(finallyCounter.get()).isEqualTo(1);
+	}
+
+	@Test
+	public void callFinallyIfNoExeption() throws IOException {
+		AtomicInteger finallyCounter = new AtomicInteger();
+
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
+
+		assertThat(Try.supplier(supplier)
+			.andFinally(finallyCounter::incrementAndGet)
+			.get()).isEqualTo("ok");
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+		assertThat(finallyCounter.get()).isEqualTo(1);
+	}
+
+	@Test
+	public void callAllFinally() throws IOException {
+		AtomicInteger finallyCounter = new AtomicInteger();
+
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
+
+		assertThat(Try.supplier(supplier)
+			.andFinally(finallyCounter::incrementAndGet)
+			.andFinally(finallyCounter::incrementAndGet)
+			.get()).isEqualTo("ok");
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+		assertThat(finallyCounter.get()).isEqualTo(2);
+	}
+
 	private static String supplierThrowingIO() throws IOException {
 		throw new IOException("should fail");
 	}
@@ -103,5 +191,23 @@ public class ThrowingSupplierTest {
 		throw new CustomRuntimeException();
 	}
 
+	private static <T, E extends Exception> CountingThrowingSupplier<T, E> countCalls(ThrowingSupplier<T, E> delegate) {
+		AtomicInteger counter = new AtomicInteger();
+		return new CountingThrowingSupplier<T, E>() {
+			@Override public int numberOfCalls() {
+				return counter.get();
+			}
+
+			@Override
+			public T get() throws E {
+				counter.incrementAndGet();
+				return delegate.get();
+			}
+		};
+	}
+
+	interface CountingThrowingSupplier<T, E extends Exception> extends ThrowingSupplier<T, E> {
+		int numberOfCalls();
+	}
 
 }

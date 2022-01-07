@@ -34,7 +34,17 @@ public interface ThrowingSupplier<T, E extends Exception> {
 			}
 		};
 	}
-	
+
+	default ThrowingSupplier<T, E> andFinally(Runnable runnable) {
+		return () -> {
+			try {
+				return this.get();
+			} finally {
+				runnable.run();
+			}
+		};
+	}
+
 	default Supplier<T> onCheckedException(Function<Exception, T> exceptionToFallback) {
 		return () -> {
 			try {

@@ -35,7 +35,17 @@ public interface ThrowingFunction<T,R,E extends Exception>  {
 			}
 		};
 	}
-	
+
+	default ThrowingFunction<T, R, E> andFinally(Runnable runnable) {
+		return value -> {
+			try {
+				return this.apply(value);
+			} finally {
+				runnable.run();
+			}
+		};
+	}
+
 	default Function<T, R> onCheckedException(BiFunction<Exception,T , R> exceptionToFallback) {
 		return value -> {
 			try {

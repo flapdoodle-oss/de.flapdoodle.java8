@@ -68,7 +68,7 @@ public abstract class Optionals {
 			return this;
 		}
 
-		public <E extends Exception> Wrapper<T> ifAbsent(ThrowingRunable<E> runable) throws E {
+		public <E extends Exception> Wrapper<T> ifAbsent(ThrowingRunnable<E> runable) throws E {
 			if (!wrapped.isPresent()) {
 				runable.run();
 			}

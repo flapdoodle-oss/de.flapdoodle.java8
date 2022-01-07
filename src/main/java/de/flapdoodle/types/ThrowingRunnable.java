@@ -18,10 +18,10 @@ package de.flapdoodle.types;
 
 import java.util.function.Function;
 
-public interface ThrowingRunable<E extends Exception> {
+public interface ThrowingRunnable<E extends Exception> {
 	void run() throws E;
-	
-	default <N extends Exception> ThrowingRunable<N> mapCheckedException(Function<Exception, N> exceptionMapper) {
+
+	default <N extends Exception> ThrowingRunnable<N> mapCheckedException(Function<Exception, N> exceptionMapper) {
 		return () -> {
 			try {
 				this.run();
@@ -30,6 +30,16 @@ public interface ThrowingRunable<E extends Exception> {
 					throw (RuntimeException) e;
 				}
 				throw exceptionMapper.apply(e);
+			}
+		};
+	}
+
+	default ThrowingRunnable<E> andFinally(Runnable runnable) {
+		return () -> {
+			try {
+				this.run();
+			} finally {
+				runnable.run();
 			}
 		};
 	}

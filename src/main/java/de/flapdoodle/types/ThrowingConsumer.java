@@ -24,7 +24,7 @@ public interface ThrowingConsumer<T, E extends Exception> {
 	void accept(T value) throws E;
 	
 	default <N extends Exception> ThrowingConsumer<T, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
-		return (value) -> {
+		return value -> {
 			try {
 				this.accept(value);
 			} catch (Exception e) {
@@ -32,6 +32,16 @@ public interface ThrowingConsumer<T, E extends Exception> {
 					throw (RuntimeException) e;
 				}
 				throw exceptionMapper.apply(e);
+			}
+		};
+	}
+
+	default ThrowingConsumer<T, E> andFinally(Runnable runnable) {
+		return value -> {
+			try {
+				this.accept(value);
+			} finally {
+				runnable.run();
 			}
 		};
 	}

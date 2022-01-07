@@ -30,7 +30,7 @@ public abstract class Try {
 		return consumer;
 	}
 
-	public static <E extends Exception> ThrowingRunable<E> runable(ThrowingRunable<E> runable) {
+	public static <E extends Exception> ThrowingRunnable<E> runable(ThrowingRunnable<E> runable) {
 		return runable;
 	}
 
@@ -46,7 +46,7 @@ public abstract class Try {
 		consumer.mapCheckedException(RuntimeException::new).accept(value);
 	}
 	
-	public static void run(ThrowingRunable<? extends Exception> runable) {
+	public static void run(ThrowingRunnable<? extends Exception> runable) {
 		runable.mapCheckedException(RuntimeException::new).run();
 	}
 }
