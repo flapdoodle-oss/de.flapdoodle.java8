@@ -19,7 +19,7 @@ package de.flapdoodle.streams;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-public class Streams {
+public abstract class Streams {
 	public static <L,R,Z> Stream<Z> zipStreamOf(Stream<L> left,Stream<R> right, BiFunction<L, R, Z> zipper) {
 		return ZipStream.of(left, right, zipper);
 	}
