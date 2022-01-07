@@ -16,6 +16,8 @@
  */
 package de.flapdoodle.types;
 
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -55,6 +57,21 @@ public interface ThrowingSupplier<T, E extends Exception> {
 					throw (RuntimeException) e;
 				}
 				return exceptionToFallback.apply(e);
+			}
+		};
+	}
+
+	default Supplier<Optional<T>> onCheckedException(Consumer<Exception> onException) {
+		return () -> {
+			try {
+				return Optional.of(this.get());
+			}
+			catch (Exception e) {
+				if (e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				}
+				onException.accept(e);
+				return Optional.empty();
 			}
 		};
 	}

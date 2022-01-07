@@ -55,15 +55,6 @@ public class ThrowingFunctionTest {
 	}
 	
 	@Test
-	public void doNotThrowWithFallback() {
-		assertThat(Try.function(this::functionThrowingIO)
-				.onCheckedException((ex,v) -> "fallback "+v)
-				.apply("ok")).isEqualTo("ok ok");
-
-		assertThat(functionCalledWith.get()).isEqualTo("ok");
-	}
-	
-	@Test
 	public void mapExeption() {
 		assertThatThrownBy(() -> Try.function(this::functionThrowingIO)
 			.mapCheckedException(IllegalArgumentException::new)
@@ -92,7 +83,16 @@ public class ThrowingFunctionTest {
 
 		assertThat(functionCalledWith.get()).isEqualTo("noop");
 	}
-	
+
+	@Test
+	public void doNotThrowWithFallback() {
+		assertThat(Try.function(this::functionThrowingIO)
+			.onCheckedException((ex,v) -> "fallback "+v)
+			.apply("ok")).isEqualTo("ok ok");
+
+		assertThat(functionCalledWith.get()).isEqualTo("ok");
+	}
+
 	@Test
 	public void mapExceptionToFallback() {
 		assertThat(Try.function(this::functionThrowingIO)
@@ -108,6 +108,35 @@ public class ThrowingFunctionTest {
 		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
 			.mapCheckedException(IllegalArgumentException::new)
 			.onCheckedException((ex,v) -> "fallback "+v)
+			.apply("noop"))
+			.isInstanceOf(CustomRuntimeException.class);
+	}
+
+	@Test
+	public void doNotCallThrowWithOnCheckedException() {
+
+		assertThat(Try.function(this::functionThrowingIO)
+			.onCheckedException((ex,v) -> {})
+			.apply("ok")).contains("ok ok");
+
+		assertThat(functionCalledWith.get()).isEqualTo("ok");
+	}
+
+	@Test
+	public void mapExceptionToOptionalEmpty() {
+		assertThat(Try.function(this::functionThrowingIO)
+			.onCheckedException((ex,v) -> {})
+			.apply("fail"))
+			.isEmpty();
+
+		assertThat(functionCalledWith.get()).isEqualTo("fail");
+	}
+
+	@Test
+	public void doesNotMapExceptionToOptionalEmptyBecauseOfRuntimeException() {
+		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
+			.mapCheckedException(IllegalArgumentException::new)
+			.onCheckedException((ex,v) -> {})
 			.apply("noop"))
 			.isInstanceOf(CustomRuntimeException.class);
 	}
