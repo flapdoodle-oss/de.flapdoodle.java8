@@ -16,45 +16,66 @@
  */
 package de.flapdoodle.types;
 
-import java.util.Optional;
-import java.util.function.Function;
-
 import org.immutables.value.Value;
 import org.immutables.value.Value.Auxiliary;
-import org.immutables.value.Value.Check;
 
-@Value.Immutable
+import java.util.NoSuchElementException;
+import java.util.function.Function;
+
 public abstract class Either<L, R> {
 
-	protected abstract Optional<L> optLeft();
+	public abstract boolean isLeft();
 
-	protected abstract Optional<R> optRight();
+	public abstract L left();
 
-	@Auxiliary
-	public boolean isLeft() {
-		return optLeft().isPresent();
+	public abstract R right();
+
+	@Value.Immutable
+	static abstract class Left<L, R> extends Either<L, R> {
+
+		@Override
+		@Value.Parameter
+		public abstract L left();
+
+		@Auxiliary
+		@Override
+		public R right() {
+			throw new NoSuchElementException("is left");
+		}
+		@Override
+		public boolean isLeft() {
+			return true;
+		}
 	}
-	
-	@Auxiliary
-	public L left() {
-		return optLeft().get();
-	}
-	
-	@Auxiliary
-	public R right() {
-		return optRight().get();
+
+	@Value.Immutable
+	static abstract class Right<L, R> extends Either<L, R> {
+
+		@Override
+		@Value.Parameter
+		public abstract R right();
+
+		@Auxiliary
+		@Override
+		public L left() {
+			throw new NoSuchElementException("is right");
+		}
+		@Override
+		public boolean isLeft() {
+			return false;
+		}
 	}
 
 	public <T> Either<T, R> mapLeft(Function<L, T> transformation) {
 		return isLeft()
-			? Either.left(transformation.apply(left()))
-			: (Either<T,R>) this;
+			? left(transformation.apply(left()))
+			: (Either<T, R>) this;
 	}
 
 	public <T> Either<L, T> mapRight(Function<R, T> transformation) {
 		return isLeft()
-			? (Either<L,T>) this
-			: Either.right(transformation.apply(right()));
+			? (Either<L, T>) this
+			: right(transformation.apply(right()));
 	}
 
 	public <T> T map(Function<L, T> leftTransformation, Function<R, T> rightTransformation) {
@@ -62,21 +83,11 @@ public abstract class Either<L, R> {
 		return mapped.isLeft() ? mapped.left() : mapped.right();
 	}
 
-	@Check
-	protected void check() {
-		if (optLeft().isPresent() && optRight().isPresent()) {
-			throw new IllegalArgumentException("is both: " + optLeft() + "," + optRight());
-		}
-		if (!optLeft().isPresent() && !optRight().isPresent()) {
-			throw new IllegalArgumentException("is nothing");
-		}
-	}
-
 	public static <L, R> Either<L, R> left(L left) {
-		return ImmutableEither.<L, R> builder().optLeft(left).build();
+		return ImmutableLeft.<L, R>of(left);
 	}
 
 	public static <L, R> Either<L, R> right(R right) {
-		return ImmutableEither.<L, R> builder().optRight(right).build();
+		return ImmutableRight.<L, R>of(right);
 	}
 }
