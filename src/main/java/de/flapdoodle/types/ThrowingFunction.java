@@ -19,7 +19,6 @@ package de.flapdoodle.types;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface ThrowingFunction<T,R,E extends Exception>  {
@@ -49,7 +48,7 @@ public interface ThrowingFunction<T,R,E extends Exception>  {
 		};
 	}
 
-	default Function<T, R> onCheckedException(BiFunction<Exception,T , R> exceptionToFallback) {
+	default Function<T, R> fallbackTo(BiFunction<Exception,T , R> exceptionToFallback) {
 		return value -> {
 			try {
 				return this.apply(value);

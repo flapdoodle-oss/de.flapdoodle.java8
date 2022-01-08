@@ -16,11 +16,13 @@
  */
 package de.flapdoodle.checks;
 
-import static org.junit.Assert.assertEquals;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PreconditionsTest {
 
@@ -59,9 +61,10 @@ public class PreconditionsTest {
 		assertEquals("normal: A, lazy: B", Preconditions.format("normal: %s, lazy: %s", "A", Preconditions.lazy(() -> "B")));
 	}
 	
-	@Test(expected=IllegalArgumentException.class)
+	@Test
 	public void argumentFalseWillFailWithIllegalArgument() {
-		Preconditions.checkArgument(false, "foo");
+		assertThatThrownBy(() -> Preconditions.checkArgument(false, "foo"))
+			.isInstanceOf(IllegalArgumentException.class);
 	}
 	
 	@Test
@@ -69,14 +72,16 @@ public class PreconditionsTest {
 		Preconditions.checkArgument(true, "foo");
 	}
 	
-	@Test(expected=NullPointerException.class)
+	@Test
 	public void checkNullWillFailWithIllegalArgument() {
-		Preconditions.checkNotNull(null, "foo");
+		assertThatThrownBy(() -> Preconditions.checkNotNull(null, "foo"))
+			.isInstanceOf(NullPointerException.class);
 	}
 	
-	@Test(expected=IllegalArgumentException.class)
+	@Test
 	public void checkPresentWillFailWithIllegalArgument() {
-		Preconditions.checkPresent(Optional.empty(), "foo");
+		assertThatThrownBy(() -> Preconditions.checkPresent(Optional.empty(), "foo"))
+			.isInstanceOf(IllegalArgumentException.class);
 	}
 	
 	@Test

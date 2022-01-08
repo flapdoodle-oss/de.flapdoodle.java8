@@ -16,8 +16,6 @@
  */
 package de.flapdoodle.compare;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Function;
@@ -26,9 +24,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.junit.Test;
-
 import de.flapdoodle.types.Types;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ComparatorsTest {
 

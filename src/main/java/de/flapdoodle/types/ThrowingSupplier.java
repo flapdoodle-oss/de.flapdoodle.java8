@@ -47,7 +47,7 @@ public interface ThrowingSupplier<T, E extends Exception> {
 		};
 	}
 
-	default Supplier<T> onCheckedException(Function<Exception, T> exceptionToFallback) {
+	default Supplier<T> fallbackTo(Function<Exception, T> exceptionToFallback) {
 		return () -> {
 			try {
 				return this.get();

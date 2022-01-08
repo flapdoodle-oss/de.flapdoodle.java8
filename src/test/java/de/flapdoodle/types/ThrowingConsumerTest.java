@@ -18,21 +18,21 @@ package de.flapdoodle.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ThrowingConsumerTest {
 
 	private final AtomicReference<String> consumerCalledWith=new AtomicReference<>();
 	private final AtomicReference<String> finallyCalledWith=new AtomicReference<>();
 
-	@Before
+	@BeforeEach
 	public void cleanConsumerCalledWithReference() {
 		consumerCalledWith.set(null);
 	}

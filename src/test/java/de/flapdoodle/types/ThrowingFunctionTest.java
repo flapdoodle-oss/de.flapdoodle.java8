@@ -16,15 +16,14 @@
  */
 package de.flapdoodle.types;
 
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.assertj.core.api.Assertions;
-import org.junit.Test;
 
 public class ThrowingFunctionTest {
 	private final AtomicReference<String> functionCalledWith=new AtomicReference<>();
@@ -87,7 +86,7 @@ public class ThrowingFunctionTest {
 	@Test
 	public void doNotThrowWithFallback() {
 		assertThat(Try.function(this::functionThrowingIO)
-			.onCheckedException((ex,v) -> "fallback "+v)
+			.fallbackTo((ex,v) -> "fallback "+v)
 			.apply("ok")).isEqualTo("ok ok");
 
 		assertThat(functionCalledWith.get()).isEqualTo("ok");
@@ -96,7 +95,7 @@ public class ThrowingFunctionTest {
 	@Test
 	public void mapExceptionToFallback() {
 		assertThat(Try.function(this::functionThrowingIO)
-			.onCheckedException((ex,v) -> "fallback "+v)
+			.fallbackTo((ex,v) -> "fallback "+v)
 			.apply("fail"))
 			.isEqualTo("fallback fail");
 
@@ -107,7 +106,7 @@ public class ThrowingFunctionTest {
 	public void doesNotMapExceptionToFallbackBecauseOfRuntimeException() {
 		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
 			.mapCheckedException(IllegalArgumentException::new)
-			.onCheckedException((ex,v) -> "fallback "+v)
+			.fallbackTo((ex,v) -> "fallback "+v)
 			.apply("noop"))
 			.isInstanceOf(CustomRuntimeException.class);
 	}

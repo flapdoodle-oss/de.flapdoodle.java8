@@ -16,16 +16,14 @@
  */
 package de.flapdoodle.types;
 
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.assertj.core.api.Assertions;
-import org.junit.Test;
 
 public class ThrowingSupplierTest {
 
@@ -100,7 +98,7 @@ public class ThrowingSupplierTest {
 
 		assertThat(Try.supplier(supplier)
 			.mapCheckedException(RuntimeException::new)
-			.onCheckedException(ex -> "fallback")
+			.fallbackTo(ex -> "fallback")
 			.get()).isEqualTo("ok");
 
 		assertThat(supplier.numberOfCalls()).isEqualTo(1);
@@ -111,7 +109,7 @@ public class ThrowingSupplierTest {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
 
 		assertThat(Try.supplier(supplier)
-			.onCheckedException(ex -> {
+			.fallbackTo(ex -> {
 				if (true) throw new RuntimeException("not called");
 				return "";
 			})
@@ -126,7 +124,7 @@ public class ThrowingSupplierTest {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
 
 		assertThat(Try.supplier(supplier)
-			.onCheckedException(ex -> "fallback")
+			.fallbackTo(ex -> "fallback")
 			.get())
 			.isEqualTo("fallback");
 
@@ -180,7 +178,7 @@ public class ThrowingSupplierTest {
 
 		assertThatThrownBy(Try.supplier(supplier)
 			.mapCheckedException(IllegalArgumentException::new)
-			.onCheckedException(ex -> "fallback")
+			.fallbackTo(ex -> "fallback")
 			::get)
 			.isInstanceOf(CustomRuntimeException.class);
 
