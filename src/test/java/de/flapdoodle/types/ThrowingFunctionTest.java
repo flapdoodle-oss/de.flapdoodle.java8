@@ -124,11 +124,19 @@ public class ThrowingFunctionTest {
 
 	@Test
 	public void mapExceptionToOptionalEmpty() {
+		AtomicReference<Exception> catchedException=new AtomicReference<>();
+		AtomicReference<String> inputValue=new AtomicReference<>();
+
 		assertThat(Try.function(this::functionThrowingIO)
-			.onCheckedException((ex,v) -> {})
+			.onCheckedException((ex,v) -> {
+				catchedException.set(ex);
+				inputValue.set(v);
+			})
 			.apply("fail"))
 			.isEmpty();
 
+		assertThat(catchedException.get()).isInstanceOf(IOException.class);
+		assertThat(inputValue.get()).isEqualTo("fail");
 		assertThat(functionCalledWith.get()).isEqualTo("fail");
 	}
 

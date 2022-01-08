@@ -20,8 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.NoSuchElementException;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 class EitherTest {
 	@Test
@@ -64,4 +63,11 @@ class EitherTest {
 		assertThatThrownBy(result::left).isInstanceOf(NoSuchElementException.class);
 	}
 
+	@Test
+	void mapMustExtractOneValue() {
+		String result = Either.<Integer, Integer>left(2)
+			.map(String::valueOf, String::valueOf);
+
+		assertThat(result).isEqualTo("2");
+	}
 }

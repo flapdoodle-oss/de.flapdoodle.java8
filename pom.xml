@@ -317,7 +317,15 @@
                         <excludedClass>de.flapdoodle.types.Wrapper</excludedClass>
                     </excludedClasses>
                     <timestampedReports>false</timestampedReports>
+                    <verbose>false</verbose>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>0.15</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
         <pluginManagement>

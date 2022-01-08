@@ -16,15 +16,19 @@
  */
 package de.flapdoodle.types;
 
+import de.flapdoodle.checks.Preconditions;
+
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import de.flapdoodle.checks.Preconditions;
-
 public abstract class Optionals {
 
+	private Optionals() {
+		// no instance
+	}
+	
 	public static <S,D, E extends Exception> Optional<D> map(Optional<S> source, ThrowingFunction<? super S, ? extends D, E> mapper) throws E {
 		return source.isPresent()
 				? Optional.of(mapper.apply(source.get()))
@@ -45,7 +49,7 @@ public abstract class Optionals {
 		return new Wrapper<>(wrapped);
 	}
 
-	public static class Wrapper<T> {
+	public final static class Wrapper<T> {
 
 		private final Optional<T> wrapped;
 
@@ -104,28 +108,16 @@ public abstract class Optionals {
 			return streamOf(wrapped);
 		}
 
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			Wrapper other = (Wrapper) obj;
-			if (wrapped == null) {
-				if (other.wrapped != null)
-					return false;
-			} else if (!wrapped.equals(other.wrapped))
-				return false;
-			return true;
+		@Override public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Wrapper<?> wrapper = (Wrapper<?>) o;
+			return wrapped.equals(wrapper.wrapped);
 		}
 
-		@Override
-		public int hashCode() {
+		@Override public int hashCode() {
 			return wrapped.hashCode();
 		}
-
 		@Override
 		public String toString() {
 			return "Wrapped("+wrapped.toString()+")";
