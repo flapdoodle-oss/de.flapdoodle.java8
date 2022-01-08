@@ -301,6 +301,24 @@
                 </configuration>
             </plugin>
 -->
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.7.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>mutationCoverage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludedClasses>
+                        <excludedClass>de.flapdoodle.types.Wrapper</excludedClass>
+                    </excludedClasses>
+                    <timestampedReports>false</timestampedReports>
+                </configuration>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
