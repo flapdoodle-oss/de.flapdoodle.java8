@@ -13,7 +13,7 @@ Stable (Maven Central Repository, Released: 08.01.2022 - wait 24hrs for [maven c
 	<dependency>
 		<groupId>de.flapdoodle.java8</groupId>
 		<artifactId>de.flapdoodle.java8</artifactId>
-		<version>1.1.0</version>
+		<version>1.1.1</version>
 	</dependency>
 
 Snapshots (Repository http://oss.sonatype.org/content/repositories/snapshots)
@@ -21,6 +21,6 @@ Snapshots (Repository http://oss.sonatype.org/content/repositories/snapshots)
 	<dependency>
 		<groupId>de.flapdoodle.java8</groupId>
 		<artifactId>de.flapdoodle.java8</artifactId>
-		<version>1.1.1-SNAPSHOT</version>
+		<version>1.1.2-SNAPSHOT</version>
 	</dependency>
 
