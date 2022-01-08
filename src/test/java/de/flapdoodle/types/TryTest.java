@@ -16,28 +16,55 @@
  */
 package de.flapdoodle.types;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TryTest {
 
 	@Test
 	public void compilerWillChoseMatchingSuperExceptionType() throws A {
-		assertNotNull(Try.supplier(TryTest::throwsAaAndAb).get());
+		assertThat(Try.supplier(TryTest::canThrowAaAndAb).get()).isEqualTo("aa+ab");
 	}
-	
+
 	@Test
 	public void compilerWillChoseExceptionIfNoMatchingSuperType() throws Exception {
-		assertNotNull(Try.supplier(TryTest::throwsAaAndB).get());
+		assertThat(Try.supplier(TryTest::canThrowsAaAndB).get()).isEqualTo("aa+b");
+	}
+
+	@Test
+	public void getOnThrowingSupplierMustProvideValue() {
+		assertThat(Try.get(TryTest::canThrowAaAndAb)).isEqualTo("aa+ab");
+	}
+
+	@Test
+	public void applyMustCallDelegate() {
+		assertThat(Try.<String, String>apply(it -> it+" called","function")).isEqualTo("function called");
+	}
+
+	@Test
+	public void acceptMustCallDelegate() {
+		AtomicReference<String> callValue=new AtomicReference<>();
+		Try.accept(it -> callValue.set(it),"consumer");
+		assertThat(callValue.get()).isEqualTo("consumer");
+	}
+
+	@Test
+	public void runMustCallDelegate() {
+		AtomicReference<String> callValue=new AtomicReference<>();
+		Try.run(() -> callValue.set("runnable"));
+		assertThat(callValue.get()).isEqualTo("runnable");
+	}
+
+	private static String canThrowAaAndAb() throws AA, AB {
+		return "aa+ab";
 	}
 	
-	private static String throwsAaAndAb() throws AA, AB {
-		return "";
-	}
-	
-	private static String throwsAaAndB() throws AA, B {
-		return "";
+	private static String canThrowsAaAndB() throws AA, B {
+		return "aa+b";
 	}
 	
 	static class A extends Exception {

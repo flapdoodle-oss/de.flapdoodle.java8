@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
@@ -54,18 +55,6 @@ public class ThrowingSupplierTest {
 			.mapCheckedException(RuntimeException::new)
 			.get()).isEqualTo("ok");
 		
-		assertThat(supplier.numberOfCalls()).isEqualTo(1);
-	}
-	
-	@Test
-	public void doNotThrowWithMappedExeptionAndFallback() {
-		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
-
-		assertThat(Try.supplier(supplier)
-			.mapCheckedException(RuntimeException::new)
-			.onCheckedException(ex -> "fallback")
-			.get()).isEqualTo("ok");
-
 		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
 	
@@ -104,7 +93,34 @@ public class ThrowingSupplierTest {
 
 		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
-	
+
+	@Test
+	public void doNotThrowWithMappedExeptionAndFallback() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
+
+		assertThat(Try.supplier(supplier)
+			.mapCheckedException(RuntimeException::new)
+			.onCheckedException(ex -> "fallback")
+			.get()).isEqualTo("ok");
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+	}
+
+	@Test
+	public void dontCallOnCheckedExceptionIfNoError() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
+
+		assertThat(Try.supplier(supplier)
+			.onCheckedException(ex -> {
+				if (true) throw new RuntimeException("not called");
+				return "";
+			})
+			.get())
+			.isEqualTo("ok");
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+	}
+
 	@Test
 	public void mapExceptionToFallback() {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
@@ -116,7 +132,48 @@ public class ThrowingSupplierTest {
 
 		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
-	
+
+	@Test
+	public void dontCallOnCheckedExceptionConsumerIfNoError() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
+
+		assertThat(Try.supplier(supplier)
+			.onCheckedException(ex -> {
+				if (true) throw new RuntimeException("not called");
+			})
+			.get())
+			.contains("ok");
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+	}
+
+	@Test
+	public void dontCallOnCheckedExceptionIfExceptionIsRuntime() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
+		AtomicReference<Exception> onCheckedException=new AtomicReference<>();
+
+		assertThatThrownBy(Try.supplier(supplier)
+			.mapCheckedException(RuntimeException::new)
+			.onCheckedException(onCheckedException::set)
+			::get)
+			.isInstanceOf(RuntimeException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+	}
+
+	@Test
+	public void supplierReturnsEmptyIfExceptionIsThrown() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
+		AtomicReference<Exception> onCheckedException=new AtomicReference<>();
+
+		assertThat(Try.supplier(supplier)
+			.onCheckedException(onCheckedException::set)
+			.get())
+			.isEmpty();
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+		assertThat(onCheckedException.get()).isInstanceOf(IOException.class);
+	}
 	@Test
 	public void doesNotMapExceptionToFallbackBecauseOfRuntimeException() {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIOButThrowsRuntime);
