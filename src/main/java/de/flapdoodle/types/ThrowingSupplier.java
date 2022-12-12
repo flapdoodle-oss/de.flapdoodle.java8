@@ -37,14 +37,6 @@ public interface ThrowingSupplier<T, E extends Exception> {
 		};
 	}
 
-	/**
-	 * @see ThrowingSupplier#mapException(Function)
-	 */
-	@Deprecated
-	default <N extends Exception> ThrowingSupplier<T, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
-		return mapException(exceptionMapper);
-	}
-
 	default Supplier<T> mapToUncheckedException(Function<Exception, RuntimeException> exceptionMapper) {
 		return mapException(exceptionMapper)::get;
 	}

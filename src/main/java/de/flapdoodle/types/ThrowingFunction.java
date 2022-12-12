@@ -38,14 +38,6 @@ public interface ThrowingFunction<T,R,E extends Exception>  {
 		};
 	}
 
-	/**
-	 * @see ThrowingFunction#mapException(Function)
-	 */
-	@Deprecated
-	default <N extends Exception> ThrowingFunction<T, R, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
-		return mapException(exceptionMapper);
-	}
-
 	default Function<T, R> mapToUncheckedException(Function<Exception, RuntimeException> exceptionMapper) {
 		return mapException(exceptionMapper)::apply;
 	}

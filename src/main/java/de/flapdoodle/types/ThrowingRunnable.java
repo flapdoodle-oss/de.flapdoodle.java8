@@ -35,14 +35,6 @@ public interface ThrowingRunnable<E extends Exception> {
 		};
 	}
 
-	/**
-	 * @see ThrowingRunnable#mapException(Function)
-	 */
-	@Deprecated
-	default <N extends Exception> ThrowingRunnable<N> mapCheckedException(Function<Exception, N> exceptionMapper) {
-		return mapException(exceptionMapper);
-	}
-
 	default Runnable mapToUncheckedException(Function<Exception, RuntimeException> exceptionMapper) {
 		return mapException(exceptionMapper)::run;
 	}

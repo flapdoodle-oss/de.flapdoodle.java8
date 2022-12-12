@@ -37,14 +37,6 @@ public interface ThrowingConsumer<T, E extends Exception> {
 		};
 	}
 
-	/**
-	 * @see ThrowingConsumer#mapException(Function)
-	 */
-	@Deprecated
-	default <N extends Exception> ThrowingConsumer<T, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
-		return mapException(exceptionMapper);
-	}
-
 	default Consumer<T> mapToUncheckedException(Function<Exception, RuntimeException> exceptionMapper) {
 		return mapException(exceptionMapper)::accept;
 	}
