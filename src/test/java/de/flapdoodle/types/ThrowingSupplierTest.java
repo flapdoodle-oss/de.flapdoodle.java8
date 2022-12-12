@@ -50,7 +50,7 @@ public class ThrowingSupplierTest {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
 
 		assertThat(Try.supplier(supplier)
-			.mapCheckedException(RuntimeException::new)
+			.mapException(RuntimeException::new)
 			.get()).isEqualTo("ok");
 		
 		assertThat(supplier.numberOfCalls()).isEqualTo(1);
@@ -61,31 +61,55 @@ public class ThrowingSupplierTest {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
 
 		assertThatThrownBy(Try.supplier(supplier)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			::get)
 			.isInstanceOf(IllegalArgumentException.class);
 
 		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
-	
+
 	@Test
 	public void mapAsRuntimeExeption() {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
 
 		assertThatThrownBy(Try.supplier(supplier)
-			.mapCheckedException(RuntimeException::new)
+			.mapException(RuntimeException::new)
 			::get)
 			.isInstanceOf(RuntimeException.class);
 
 		assertThat(supplier.numberOfCalls()).isEqualTo(1);
 	}
-	
+
 	@Test
 	public void dontRemapRuntimeExeption() {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIOButThrowsRuntime);
 
 		assertThatThrownBy(Try.supplier(supplier)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
+			::get)
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+	}
+
+	@Test
+	public void mapToUnchecked() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierThrowingIO);
+
+		assertThatThrownBy(Try.supplier(supplier)
+			.mapToUncheckedException(RuntimeException::new)
+			::get)
+			.isInstanceOf(RuntimeException.class);
+
+		assertThat(supplier.numberOfCalls()).isEqualTo(1);
+	}
+
+	@Test
+	public void mapToUncheckedDontRemapRuntimeExeption() {
+		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIOButThrowsRuntime);
+
+		assertThatThrownBy(Try.supplier(supplier)
+			.mapToUncheckedException(IllegalArgumentException::new)
 			::get)
 			.isInstanceOf(CustomRuntimeException.class);
 
@@ -97,7 +121,7 @@ public class ThrowingSupplierTest {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIO);
 
 		assertThat(Try.supplier(supplier)
-			.mapCheckedException(RuntimeException::new)
+			.mapException(RuntimeException::new)
 			.fallbackTo(ex -> "fallback")
 			.get()).isEqualTo("ok");
 
@@ -151,7 +175,7 @@ public class ThrowingSupplierTest {
 		AtomicReference<Exception> onCheckedException=new AtomicReference<>();
 
 		assertThatThrownBy(Try.supplier(supplier)
-			.mapCheckedException(RuntimeException::new)
+			.mapException(RuntimeException::new)
 			.onCheckedException(onCheckedException::set)
 			::get)
 			.isInstanceOf(RuntimeException.class);
@@ -177,7 +201,7 @@ public class ThrowingSupplierTest {
 		CountingThrowingSupplier<String, IOException> supplier = countCalls(ThrowingSupplierTest::supplierCouldThrowIOButThrowsRuntime);
 
 		assertThatThrownBy(Try.supplier(supplier)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			.fallbackTo(ex -> "fallback")
 			::get)
 			.isInstanceOf(CustomRuntimeException.class);

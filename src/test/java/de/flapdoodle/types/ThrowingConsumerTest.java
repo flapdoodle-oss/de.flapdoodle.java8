@@ -53,7 +53,7 @@ public class ThrowingConsumerTest {
 	@Test
 	public void doNotThrowWithMappedExeption() {
 		Try.consumer(this::consumerThrowingIO)
-				.mapCheckedException(RuntimeException::new)
+				.mapException(RuntimeException::new)
 				.accept("ok");
 		assertEquals("ok", consumerCalledWith.get());
 	}
@@ -69,7 +69,7 @@ public class ThrowingConsumerTest {
 	@Test
 	public void mapExeption() {
 		assertThatThrownBy(() -> Try.consumer(this::consumerThrowingIO)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			.accept("fail"))
 			.isInstanceOf(IllegalArgumentException.class);
 
@@ -79,7 +79,7 @@ public class ThrowingConsumerTest {
 	@Test
 	public void mapAsRuntimeExeption() {
 		assertThatThrownBy(() -> Try.consumer(this::consumerThrowingIO)
-			.mapCheckedException(RuntimeException::new)
+			.mapException(RuntimeException::new)
 			.accept("fail"))
 			.isInstanceOf(RuntimeException.class);
 
@@ -89,13 +89,33 @@ public class ThrowingConsumerTest {
 	@Test
 	public void dontRemapRuntimeExeption() {
 		assertThatThrownBy(() -> Try.consumer(this::consumerCouldThrowIOButThrowsRuntime)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			.accept("noop"))
 			.isInstanceOf(CustomRuntimeException.class);
 
 		assertEquals("noop", consumerCalledWith.get());
 	}
-	
+
+	@Test
+	public void mapToUnchecked() {
+		assertThatThrownBy(() -> Try.consumer(this::consumerThrowingIO)
+			.mapToUncheckedException(RuntimeException::new)
+			.accept("fail"))
+			.isInstanceOf(RuntimeException.class);
+
+		assertEquals("fail", consumerCalledWith.get());
+	}
+
+	@Test
+	public void mapToUncheckedDontRemapRuntimeExeption() {
+		assertThatThrownBy(() -> Try.consumer(this::consumerCouldThrowIOButThrowsRuntime)
+			.mapToUncheckedException(IllegalArgumentException::new)
+			.accept("noop"))
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertEquals("noop", consumerCalledWith.get());
+	}
+
 	@Test
 	public void mapExceptionToFallback() {
 		Try.consumer(this::consumerThrowingIO)
@@ -136,7 +156,7 @@ public class ThrowingConsumerTest {
 	@Test
 	public void doesNotMapExceptionToFallbackBecauseOfRuntimeException() {
 		assertThatThrownBy(() -> Try.consumer(this::consumerCouldThrowIOButThrowsRuntime)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			.onCheckedException((ex,v) -> {})
 			.accept("noop"))
 			.isInstanceOf(CustomRuntimeException.class);

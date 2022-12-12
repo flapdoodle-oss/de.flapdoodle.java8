@@ -51,7 +51,7 @@ public class ThrowingRunnableTest {
 		CountingThrowingRunable<IOException> runable = countCalls(ThrowingRunnableTest::runableCouldThrowIO);
 
 		Try.runable(runable)
-			.mapCheckedException(RuntimeException::new)
+			.mapException(RuntimeException::new)
 			.run();
 
 		assertThat(runable.numberOfCalls()).isEqualTo(1);
@@ -62,7 +62,7 @@ public class ThrowingRunnableTest {
 		CountingThrowingRunable<IOException> runable = countCalls(ThrowingRunnableTest::runableThrowingIO);
 
 		assertThatThrownBy(Try.runable(runable)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			::run)
 			.isInstanceOf(IllegalArgumentException.class);
 
@@ -74,7 +74,7 @@ public class ThrowingRunnableTest {
 		CountingThrowingRunable<IOException> runable = countCalls(ThrowingRunnableTest::runableThrowingIO);
 
 		assertThatThrownBy(Try.runable(runable)
-			.mapCheckedException(RuntimeException::new)
+			.mapException(RuntimeException::new)
 			::run)
 			.isInstanceOf(RuntimeException.class);
 
@@ -86,7 +86,31 @@ public class ThrowingRunnableTest {
 		CountingThrowingRunable<IOException> runable = countCalls(ThrowingRunnableTest::runableCouldThrowIOButThrowsRuntime);
 
 		assertThatThrownBy(Try.runable(runable)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
+			::run)
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertThat(runable.numberOfCalls()).isEqualTo(1);
+	}
+
+	@Test
+	public void mapToUnchecked() {
+		CountingThrowingRunable<IOException> runable = countCalls(ThrowingRunnableTest::runableThrowingIO);
+
+		assertThatThrownBy(Try.runable(runable)
+			.mapToUncheckedException(RuntimeException::new)
+			::run)
+			.isInstanceOf(RuntimeException.class);
+
+		assertThat(runable.numberOfCalls()).isEqualTo(1);
+	}
+
+	@Test
+	public void mapToUncheckedDontRemapRuntimeExeption() {
+		CountingThrowingRunable<IOException> runable = countCalls(ThrowingRunnableTest::runableCouldThrowIOButThrowsRuntime);
+
+		assertThatThrownBy(Try.runable(runable)
+			.mapToUncheckedException(IllegalArgumentException::new)
 			::run)
 			.isInstanceOf(CustomRuntimeException.class);
 

@@ -47,7 +47,7 @@ public class ThrowingFunctionTest {
 	@Test
 	public void doNotThrowWithMappedExeption() {
 		assertThat(Try.function(this::functionThrowingIO)
-				.mapCheckedException(RuntimeException::new)
+				.mapException(RuntimeException::new)
 				.apply("ok")).isEqualTo("ok ok");
 
 		assertThat(functionCalledWith.get()).isEqualTo("ok");
@@ -56,27 +56,47 @@ public class ThrowingFunctionTest {
 	@Test
 	public void mapExeption() {
 		assertThatThrownBy(() -> Try.function(this::functionThrowingIO)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			.apply("fail"))
 			.isInstanceOf(IllegalArgumentException.class);
 
 		assertThat(functionCalledWith.get()).isEqualTo("fail");
 	}
-	
+
 	@Test
 	public void mapAsRuntimeExeption() {
 		assertThatThrownBy(() -> Try.function(this::functionThrowingIO)
-			.mapCheckedException(RuntimeException::new)
+			.mapException(RuntimeException::new)
 			.apply("fail"))
 			.isInstanceOf(RuntimeException.class);
 
 		assertThat(functionCalledWith.get()).isEqualTo("fail");
 	}
-	
+
 	@Test
 	public void dontRemapRuntimeExeption() {
 		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
+			.apply("noop"))
+			.isInstanceOf(CustomRuntimeException.class);
+
+		assertThat(functionCalledWith.get()).isEqualTo("noop");
+	}
+
+	@Test
+	public void mapToUnchecked() {
+		assertThatThrownBy(() -> Try.function(this::functionThrowingIO)
+			.mapToUncheckedException(RuntimeException::new)
+			.apply("fail"))
+			.isInstanceOf(RuntimeException.class);
+
+		assertThat(functionCalledWith.get()).isEqualTo("fail");
+	}
+
+	@Test
+	public void mapToUncheckedDontRemapRuntimeExeption() {
+		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
+			.mapToUncheckedException(IllegalArgumentException::new)
 			.apply("noop"))
 			.isInstanceOf(CustomRuntimeException.class);
 
@@ -105,7 +125,7 @@ public class ThrowingFunctionTest {
 	@Test
 	public void doesNotMapExceptionToFallbackBecauseOfRuntimeException() {
 		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			.fallbackTo((ex,v) -> "fallback "+v)
 			.apply("noop"))
 			.isInstanceOf(CustomRuntimeException.class);
@@ -142,7 +162,7 @@ public class ThrowingFunctionTest {
 	@Test
 	public void doesNotMapExceptionToOptionalEmptyBecauseOfRuntimeException() {
 		assertThatThrownBy(() -> Try.function(this::functionCouldThrowIOButThrowsRuntime)
-			.mapCheckedException(IllegalArgumentException::new)
+			.mapException(IllegalArgumentException::new)
 			.onCheckedException((ex,v) -> {})
 			.apply("noop"))
 			.isInstanceOf(CustomRuntimeException.class);

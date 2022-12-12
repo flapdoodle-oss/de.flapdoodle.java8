@@ -25,7 +25,7 @@ public interface ThrowingFunction<T,R,E extends Exception>  {
 	
 	R apply(T t) throws E;
 	
-	default <N extends Exception> ThrowingFunction<T, R, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
+	default <N extends Exception> ThrowingFunction<T, R, N> mapException(Function<Exception, N> exceptionMapper) {
 		return value -> {
 			try {
 				return this.apply(value);
@@ -36,6 +36,18 @@ public interface ThrowingFunction<T,R,E extends Exception>  {
 				throw exceptionMapper.apply(e);
 			}
 		};
+	}
+
+	/**
+	 * @see ThrowingFunction#mapException(Function)
+	 */
+	@Deprecated
+	default <N extends Exception> ThrowingFunction<T, R, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
+		return mapException(exceptionMapper);
+	}
+
+	default Function<T, R> mapToUncheckedException(Function<Exception, RuntimeException> exceptionMapper) {
+		return mapException(exceptionMapper)::apply;
 	}
 
 	default ThrowingFunction<T, R, E> andFinally(Runnable runnable) {

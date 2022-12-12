@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 public interface ThrowingSupplier<T, E extends Exception> {
 	T get() throws E;
 	
-	default <N extends Exception> ThrowingSupplier<T, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
+	default <N extends Exception> ThrowingSupplier<T, N> mapException(Function<Exception, N> exceptionMapper) {
 		return () -> {
 			try {
 				return this.get();
@@ -35,6 +35,18 @@ public interface ThrowingSupplier<T, E extends Exception> {
 				throw exceptionMapper.apply(e);
 			}
 		};
+	}
+
+	/**
+	 * @see ThrowingSupplier#mapException(Function)
+	 */
+	@Deprecated
+	default <N extends Exception> ThrowingSupplier<T, N> mapCheckedException(Function<Exception, N> exceptionMapper) {
+		return mapException(exceptionMapper);
+	}
+
+	default Supplier<T> mapToUncheckedException(Function<Exception, RuntimeException> exceptionMapper) {
+		return mapException(exceptionMapper)::get;
 	}
 
 	default ThrowingSupplier<T, E> andFinally(Runnable runnable) {
