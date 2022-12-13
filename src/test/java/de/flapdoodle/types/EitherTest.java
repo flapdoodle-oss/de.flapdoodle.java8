@@ -33,11 +33,29 @@ class EitherTest {
 	}
 
 	@Test
+	void eitherLeftWithNull() {
+		Either<String, Integer> result = Either.left(null);
+
+		assertThat(result.isLeft()).isTrue();
+		assertThat(result.left()).isNull();
+		assertThatThrownBy(result::right).isInstanceOf(NoSuchElementException.class);
+	}
+
+	@Test
 	void eitherRight() {
 		Either<String, Integer> result = Either.right(2);
 
 		assertThat(result.isLeft()).isFalse();
 		assertThat(result.right()).isEqualTo(2);
+		assertThatThrownBy(result::left).isInstanceOf(NoSuchElementException.class);
+	}
+
+	@Test
+	void eitherRightWithNull() {
+		Either<String, Integer> result = Either.right(null);
+
+		assertThat(result.isLeft()).isFalse();
+		assertThat(result.right()).isNull();
 		assertThatThrownBy(result::left).isInstanceOf(NoSuchElementException.class);
 	}
 

@@ -26,8 +26,10 @@ public abstract class Either<L, R> {
 
 	public abstract boolean isLeft();
 
+	@Nullable
 	public abstract L left();
 
+	@Nullable
 	public abstract R right();
 
 	@Value.Immutable
@@ -35,6 +37,7 @@ public abstract class Either<L, R> {
 
 		@Override
 		@Value.Parameter
+		@Nullable
 		public abstract L left();
 
 		@Auxiliary
@@ -53,6 +56,7 @@ public abstract class Either<L, R> {
 
 		@Override
 		@Value.Parameter
+		@Nullable
 		public abstract R right();
 
 		@Auxiliary

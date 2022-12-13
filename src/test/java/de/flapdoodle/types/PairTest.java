@@ -42,7 +42,16 @@ class PairTest {
 		Pair<Integer, String> testee = Pair.of(1, "second")
 			.mapFirst(it -> it + 1)
 			.mapSecond(it -> "<"+it+">");
-		
+
+		assertThat(testee.first()).isEqualTo(2);
+		assertThat(testee.second()).isEqualTo("<second>");
+	}
+
+	@Test
+	public void mapMustMapBothValues() {
+		Pair<Integer, String> testee = Pair.of(1, "second")
+			.map(it -> it + 1, it -> "<"+it+">");
+
 		assertThat(testee.first()).isEqualTo(2);
 		assertThat(testee.second()).isEqualTo("<second>");
 	}

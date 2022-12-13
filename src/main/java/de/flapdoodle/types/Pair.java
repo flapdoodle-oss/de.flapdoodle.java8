@@ -35,6 +35,13 @@ public abstract class Pair<FIRST, SECOND> {
 		return of(first(), transformation.apply(second()));
 	}
 
+	public <FIRST_MAPPED,SECOND_MAPPED> Pair<FIRST_MAPPED, SECOND_MAPPED> map(
+		Function<FIRST, FIRST_MAPPED> first,
+		Function<SECOND, SECOND_MAPPED> second
+	) {
+		return mapFirst(first).mapSecond(second);
+	}
+
 	public static <FIRST, SECOND> Pair<FIRST,SECOND> of(FIRST first, SECOND second) {
 		return ImmutablePair.of(first, second);
 	}
