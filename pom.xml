@@ -317,6 +317,7 @@
                     <excludedClasses>
                         <excludedClass>de.flapdoodle.types.Wrapper</excludedClass>
                     </excludedClasses>
+                    <excludedTestClasses>de.flapdoodle.net.URLConnectionsTest</excludedTestClasses>
                     <timestampedReports>false</timestampedReports>
                     <verbose>false</verbose>
                 </configuration>
