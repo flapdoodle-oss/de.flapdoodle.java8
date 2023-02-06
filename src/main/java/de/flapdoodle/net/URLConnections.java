@@ -4,11 +4,9 @@ import de.flapdoodle.checks.Preconditions;
 import de.flapdoodle.types.Optionals;
 import de.flapdoodle.types.ThrowingSupplier;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -18,7 +16,6 @@ public class URLConnections {
 
 	static final int BUFFER_LENGTH = 1024 * 8 * 8;
 
-	// -Djdk.http.auth.tunneling.disabledSchemes=
 	public static URLConnection urlConnectionOf(URL url, Optional<Proxy> proxy) throws IOException {
 		URLConnection openConnection = Optionals.with(proxy)
 			.map(url::openConnection)
@@ -32,13 +29,6 @@ public class URLConnections {
 			}
 		});
 
-//		if ("https".equals(url.getProtocol()) && proxy.isPresent() && (proxy.get().address() instanceof InetSocketAddress)) {
-//			throw new RuntimeException("https connection over http proxy is not implemented");
-//		}
-
-//		openConnection.setRequestProperty("User-Agent",userAgent);
-//		openConnection.setConnectTimeout(timeoutConfig.getConnectionTimeout());
-//		openConnection.setReadTimeout(timeoutConfig.getReadTimeout());
 		return openConnection;
 	}
 

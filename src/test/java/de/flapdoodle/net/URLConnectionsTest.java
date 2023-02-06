@@ -1,5 +1,6 @@
 package de.flapdoodle.net;
 
+import de.flapdoodle.types.Pair;
 import fi.iki.elonen.NanoHTTPD;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import java.util.Base64;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class URLConnectionsTest {
 
@@ -124,7 +126,7 @@ class URLConnectionsTest {
 
 		@Test
 		public void connectToHttpsServerWithProxy() throws IOException, NoSuchAlgorithmException, KeyManagementException {
-			int port = true ? 12345 : Net.freeServerPort();
+			int port = Net.freeServerPort();
 
 			HttpServers.Listener listener = session -> {
 				if (session.getUri().equals("/test")) {
@@ -148,6 +150,15 @@ class URLConnectionsTest {
 			}
 		}
 
+		/**
+		 * if the destination is just a http url, then the header set in ${@link URLConnections#urlConnectionOf(URL, Optional)}
+		 * is enough to let the request pass (if username and password matches)
+
+		 * to tunnel a https connection through a proxy with proxy authentication someone
+		 * has to ask for user and password or has to set the header to the proxy connection
+		 *
+		 * AFAIK this is not possible with the API available with java 8
+		 */
 		@Test
 		public void connectToHttpsServerWithProxyWithBasicAuth() throws IOException, NoSuchAlgorithmException, KeyManagementException {
 			int port = true ? 12345 : Net.freeServerPort();
@@ -163,20 +174,23 @@ class URLConnectionsTest {
 				return Optional.empty();
 			};
 
-//			System.out.println("---->"+System.getProperty("jdk.http.auth.tunneling.disabledSchemes"));
-//			System.setProperty("jdk.http.auth.tunneling.disabledSchemes","");
+			HttpServers.HttpsProxyServer.HttpsProxySessionListener proxyListener= session -> {
+				if (!session.headers().containsKey("Proxy-Authorization")) {
+					session.response(407, "Proxy Authorization Required",
+								Pair.of("Proxy-Authenticate", "Basic realm\"Protected\"")
+					);
+				}
+			};
 
 			try (HttpServers.HttpsServer httpsServer = new HttpServers.HttpsServer(port, listener)) {
-				try (HttpServers.HttpsProxyServer proxyServer = new HttpServers.HttpsProxyServer(port + 1)) {
+				try (HttpServers.HttpsProxyServer proxyServer = new HttpServers.HttpsProxyServer(port + 1, proxyListener)) {
 					HttpsURLConnection connection = (HttpsURLConnection) URLConnections.urlConnectionOf(httpsServer.urlOf("test"),
 						Optional.of(Proxys.httpProxy(proxyServer.getHostname(), proxyServer.getListeningPort(), username, password)));
 					connection.setSSLSocketFactory(Net.acceptAllSSLSocketFactory());
 
-					byte[] response = URLConnections.downloadIntoByteArray(connection);
-
-					assertThat(response)
-						.asString(StandardCharsets.UTF_8)
-						.isEqualTo("dummy");
+					assertThatThrownBy(() -> URLConnections.downloadIntoByteArray(connection))
+						.isInstanceOf(IOException.class)
+						.hasMessageContaining("Unable to tunnel through proxy. Proxy returns \"HTTP/1.0 407 Proxy Authorization Required\"");
 				}
 			}
 		}

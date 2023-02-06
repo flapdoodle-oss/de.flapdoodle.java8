@@ -112,10 +112,16 @@ public class HttpServers {
 		private final int port;
 		private final ServerThread server;
 
-		public HttpsProxyServer(int port) throws IOException {
+		public HttpsProxyServer(int port, HttpsProxySessionListener sessionListener) throws IOException {
 			this.port = port;
-			this.server = new ServerThread(port);
+			this.server = new ServerThread(port, sessionListener);
 			this.server.start();
+		}
+
+		public HttpsProxyServer(int port) throws IOException {
+			this(port, (session) -> {
+				
+			});
 		}
 
 		public String getHostname() {
@@ -131,14 +137,29 @@ public class HttpServers {
 			this.server.close();
 		}
 
+		interface HttpsProxySessionListener {
+			void onRequest(HttpsProxySession session);
+		}
+
+		interface HttpsProxySession {
+			String host();
+			int port();
+			Map<String, String> headers();
+
+			void response(int statusCode, String statusCodeLabel, Pair<String, String> ... headers);
+		}
+
 		static class ServerThread extends Thread {
 
 			private final int port;
 			private final ServerSocket serverSocket;
+			private HttpsProxySessionListener sessionListener;
 			private AtomicBoolean running=new AtomicBoolean(true);
 
-			private ServerThread(int port) throws IOException {
+			private ServerThread(int port, HttpsProxySessionListener sessionListener) throws IOException {
 				this.port = port;
+				this.sessionListener = sessionListener;
+
 				this.serverSocket = new ServerSocket(port);
 			}
 
@@ -147,7 +168,7 @@ public class HttpServers {
 				Socket socket;
 				try {
 					while (running.get() && (socket = serverSocket.accept()) != null) {
-						WorkerThread worker = new WorkerThread(socket);
+						WorkerThread worker = new WorkerThread(socket, sessionListener);
 						worker.start();
 					}
 				} catch (IOException iox) {
@@ -180,9 +201,12 @@ public class HttpServers {
 			private final Socket client;
 			private final OutputStream clientOutputStream;
 			private final InputStream clientInputStream;
+			private HttpsProxySessionListener sessionListener;
 
-			public WorkerThread(Socket client) throws IOException {
+			public WorkerThread(Socket client, HttpsProxySessionListener sessionListener) throws IOException {
 				this.client = client;
+				this.sessionListener = sessionListener;
+				
 				this.clientOutputStream = client.getOutputStream();
 				this.clientInputStream = client.getInputStream();
 			}
@@ -194,7 +218,7 @@ public class HttpServers {
 					Matcher matcher = CONNECT_PATTERN.matcher(line);
 					if (matcher.matches()) {
 						String host = matcher.group("host");
-						String port = matcher.group("port");
+						int port = Integer.parseInt(matcher.group("port"));
 
 						Map<String, String> headers=new LinkedHashMap<>();
 						String headerLine;
@@ -208,7 +232,49 @@ public class HttpServers {
 
 						headers.forEach((key,val) -> System.out.println(key+": "+val));
 
-						Socket destination = new Socket(host, Integer.parseInt(port));
+						AtomicBoolean responseAlreadySendFromSessionListener=new AtomicBoolean();
+						HttpsProxySession session=new HttpsProxySession() {
+
+							@Override
+							public String host() {
+								return host;
+							}
+							@Override
+							public int port() {
+								return port;
+							}
+
+							@Override public Map<String, String> headers() {
+								return Collections.unmodifiableMap(headers);
+							}
+
+							@Override
+							public void response(int statusCode, String statusCodeLabel, Pair<String, String> ... headers) {
+								try {
+									responseAlreadySendFromSessionListener.set(true);
+									WorkerThread.this.response(new OutputStreamWriter(clientOutputStream), statusCode, statusCodeLabel, headers);
+								}
+								catch (IOException e) {
+									throw new RuntimeException(e);
+								}
+							}
+						};
+
+						sessionListener.onRequest(session);
+
+						if (responseAlreadySendFromSessionListener.get()) {
+							return;
+						}
+//						if (!headers.containsKey("Proxy-Authorization")) {
+//							response(new OutputStreamWriter(clientOutputStream), 407, "Proxy Authorization Required",
+//								Pair.of("Proxy-agent","MockProxy/0.1"),
+//								Pair.of("Proxy-Authenticate", "Basic realm\"Protected\"")
+//							);
+//
+//							return;
+//						}
+
+						Socket destination = new Socket(host, port);
 						response(200, "Connection established");
 						InputStream serverInputStream = destination.getInputStream();
 						OutputStream serverOutputStream = destination.getOutputStream();
