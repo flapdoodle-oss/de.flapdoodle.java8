@@ -246,8 +246,6 @@ public class HttpServers {
 							}
 						} while (!headerLine.equals("\r\n"));
 
-						headers.forEach((key,val) -> System.out.println(key+": "+val));
-
 						AtomicBoolean responseAlreadySendFromSessionListener=new AtomicBoolean();
 						HttpsProxySession session=new HttpsProxySession() {
 
@@ -281,14 +279,6 @@ public class HttpServers {
 						if (responseAlreadySendFromSessionListener.get()) {
 							return;
 						}
-//						if (!headers.containsKey("Proxy-Authorization")) {
-//							response(new OutputStreamWriter(clientOutputStream), 407, "Proxy Authorization Required",
-//								Pair.of("Proxy-agent","MockProxy/0.1"),
-//								Pair.of("Proxy-Authenticate", "Basic realm\"Protected\"")
-//							);
-//
-//							return;
-//						}
 
 						Socket destination = new Socket(host, port);
 						response(200, "Connection established");
