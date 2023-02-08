@@ -317,7 +317,10 @@
                     <excludedClasses>
                         <excludedClass>de.flapdoodle.types.Wrapper</excludedClass>
                     </excludedClasses>
-                    <excludedTestClasses>de.flapdoodle.net.URLConnectionsTest</excludedTestClasses>
+                    <excludedTestClasses>
+                        <excludedTestClass>de.flapdoodle.net.URLConnectionsTest</excludedTestClass>
+                        <excludedTestClass>de.flapdoodle.HowToTest</excludedTestClass>
+                    </excludedTestClasses>
                     <timestampedReports>false</timestampedReports>
                     <verbose>false</verbose>
                 </configuration>
@@ -443,6 +446,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>

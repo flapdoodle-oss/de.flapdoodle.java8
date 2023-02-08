@@ -20,9 +20,13 @@ import de.flapdoodle.checks.Preconditions;
 import de.flapdoodle.types.Optionals;
 import de.flapdoodle.types.ThrowingSupplier;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.*;
-import java.net.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.Proxy;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -32,7 +36,16 @@ public class URLConnections {
 
 	static final int BUFFER_LENGTH = 1024 * 8 * 8;
 
-	public static URLConnection urlConnectionOf(URL url, Optional<Proxy> proxy) throws IOException {
+	public static URLConnection urlConnectionOf(URL url) throws IOException {
+		return urlConnectionOf(url, Optional.empty());
+	}
+
+	public static URLConnection urlConnectionOf(URL url, Proxy proxy) throws IOException {
+		return urlConnectionOf(url, Optional.of(proxy));
+	}
+
+	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+	private static URLConnection urlConnectionOf(URL url, Optional<Proxy> proxy) throws IOException {
 		URLConnection openConnection = Optionals.with(proxy)
 			.map(url::openConnection)
 			.orElseGet(url::openConnection);
@@ -42,6 +55,12 @@ public class URLConnections {
 				Proxys.UseBasicAuth withBasicAuth = (Proxys.UseBasicAuth) it;
 				String authHeader = new String(Base64.getEncoder().encode((withBasicAuth.proxyUser() + ":" + withBasicAuth.proxyPassword()).getBytes()));
 				openConnection.setRequestProperty("Proxy-Authorization", "Basic " + authHeader);
+
+				if (url.getProtocol().equals("https")) {
+					// the jdk creates a tunnel https connection proxy request with no way to add an header to this request
+					// if you read this comment and know how to fix it, please open a PR:)
+					throw new IllegalArgumentException("access of a https url over a proxy with proxy authorization is not supported");
+				}
 			}
 		});
 
@@ -66,7 +85,7 @@ public class URLConnections {
 		Path tempFile = java.nio.file.Files.createTempFile("download", "");
 		boolean downloadSucceeded=false;
 		try {
-			downloadAndCopy(connection, () -> new BufferedOutputStream(Files.newOutputStream(tempFile.toFile().toPath())), copyListener);
+			downloadIntoFile(connection, tempFile, copyListener);
 			downloadSucceeded=true;
 			return tempFile;
 		} finally {
@@ -74,6 +93,10 @@ public class URLConnections {
 				Files.delete(tempFile);
 			}
 		}
+	}
+
+	public static void downloadIntoFile(URLConnection connection, Path tempFile, DownloadCopyListener copyListener) throws IOException {
+		downloadAndCopy(connection, () -> new BufferedOutputStream(Files.newOutputStream(tempFile.toFile().toPath())), copyListener);
 	}
 
 	private static <E extends Exception> void downloadAndCopy(URLConnection connection, ThrowingSupplier<BufferedOutputStream, E> output, DownloadCopyListener copyListener) throws IOException, E {
@@ -96,6 +119,7 @@ public class URLConnections {
 		}
 	}
 
+	@FunctionalInterface
 	public interface DownloadCopyListener {
 		void downloaded(URL url, long bytesCopied, long contentLength);
 	}

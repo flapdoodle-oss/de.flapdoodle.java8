@@ -162,6 +162,7 @@ public class HttpServers {
 			int port();
 			Map<String, String> headers();
 
+			@SuppressWarnings("unchecked")
 			void response(int statusCode, String statusCodeLabel, Pair<String, String> ... headers);
 		}
 
@@ -169,8 +170,8 @@ public class HttpServers {
 
 			private final int port;
 			private final ServerSocket serverSocket;
-			private HttpsProxySessionListener sessionListener;
-			private AtomicBoolean running=new AtomicBoolean(true);
+			private final HttpsProxySessionListener sessionListener;
+			private final AtomicBoolean running=new AtomicBoolean(true);
 
 			private ServerThread(int port, HttpsProxySessionListener sessionListener) throws IOException {
 				this.port = port;
