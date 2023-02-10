@@ -16,7 +16,6 @@
  */
 package de.flapdoodle;
 
-import de.flapdoodle.net.Net;
 import de.flapdoodle.testdoc.Recorder;
 import de.flapdoodle.testdoc.Recording;
 import de.flapdoodle.testdoc.TabSize;
@@ -30,10 +29,8 @@ public class HowToTest {
 	public static Recording recording = Recorder.with("HowTo.md", TabSize.spaces(2));
 
 	@Test
-	public void freeServerPort() throws IOException {
+	public void noop() throws IOException {
 		recording.begin();
-		int freeServerPort = Net.freeServerPort();
 		recording.end();
 	}
-
 }

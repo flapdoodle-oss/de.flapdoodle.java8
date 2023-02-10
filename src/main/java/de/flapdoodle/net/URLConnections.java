@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 public class URLConnections {
 
@@ -121,6 +122,12 @@ public class URLConnections {
 
 	@FunctionalInterface
 	public interface DownloadCopyListener {
+		/**
+		 * called on each transfered block
+		 * @param url current url
+		 * @param bytesCopied 0..n
+		 * @param contentLength -1 if not set
+		 */
 		void downloaded(URL url, long bytesCopied, long contentLength);
 	}
 }

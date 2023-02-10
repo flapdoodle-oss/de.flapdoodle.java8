@@ -16,10 +16,14 @@
  */
 package de.flapdoodle.net;
 
+import de.flapdoodle.testdoc.Recorder;
+import de.flapdoodle.testdoc.Recording;
+import de.flapdoodle.testdoc.TabSize;
 import de.flapdoodle.types.Pair;
 import fi.iki.elonen.NanoHTTPD;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -185,7 +189,7 @@ class URLConnectionsTest {
 
 			try (HttpServers.HttpsServer server = new HttpServers.HttpsServer(Net.freeServerPort(), listener)) {
 				HttpsURLConnection connection = (HttpsURLConnection) URLConnections.urlConnectionOf(server.urlOf("test"));
-				connection.setSSLSocketFactory(Net.acceptAllSSLSocketFactory());
+				connection.setSSLSocketFactory(Net.acceptAllSSLContext().getSocketFactory());
 				//connection.setAuthenticator(new Authenticator() {});
 
 				byte[] response = URLConnections.downloadIntoByteArray(connection);
@@ -211,7 +215,7 @@ class URLConnectionsTest {
 				try (HttpServers.HttpsProxyServer proxyServer = new HttpServers.HttpsProxyServer(port + 1)) {
 					HttpsURLConnection connection = (HttpsURLConnection) URLConnections.urlConnectionOf(httpsServer.urlOf("test"),
 						Proxys.httpProxy(proxyServer.getHostname(), proxyServer.getListeningPort()));
-					connection.setSSLSocketFactory(Net.acceptAllSSLSocketFactory());
+					connection.setSSLSocketFactory(Net.acceptAllSSLContext().getSocketFactory());
 
 					byte[] response = URLConnections.downloadIntoByteArray(connection);
 
@@ -266,7 +270,7 @@ class URLConnectionsTest {
 					if (urlConnectionOfHasNoCheckIfHttpsIsUsed) {
 						HttpsURLConnection connection = (HttpsURLConnection) URLConnections.urlConnectionOf(httpsServer.urlOf("test"),
 							Proxys.httpProxy(proxyServer.getHostname(), proxyServer.getListeningPort(), username, password));
-						connection.setSSLSocketFactory(Net.acceptAllSSLSocketFactory());
+						connection.setSSLSocketFactory(Net.acceptAllSSLContext().getSocketFactory());
 
 						assertThatThrownBy(() -> URLConnections.downloadIntoByteArray(connection))
 							.isInstanceOf(IOException.class)
