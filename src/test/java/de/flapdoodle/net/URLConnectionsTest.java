@@ -38,10 +38,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -95,6 +93,53 @@ class URLConnectionsTest {
 				.isRegularFile()
 				.hasContent(content);
 		}
+
+		@ParameterizedTest(name = "blocks: {0}")
+		@ValueSource(ints = {1,2,4})
+		public void downloadShouldBeCompleteAndMatchContent(int blocks) throws IOException {
+			int httpPort = Net.freeServerPort();
+			String content=String.join("", Collections.nCopies(blocks*1000, UUID.randomUUID().toString()));
+			long contentLengt = content.getBytes(StandardCharsets.UTF_8).length;
+
+			HttpServers.Listener listener=(session) -> {
+				if (session.getUri().equals("/download")) {
+					return Optional.of(HttpServers.response(200, "text/text", content.getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+
+			List<Long> downloadSizes = new ArrayList<>();
+
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(httpPort, listener)) {
+				URLConnection connection = new URL("http://localhost:"+httpPort+"/download?foo=bar").openConnection();
+
+				URLConnections.DownloadCopyListener copyListener=(url, bytesCopied, downloadContentLength) -> {
+					downloadSizes.add(bytesCopied);
+					assertThat(downloadContentLength).isEqualTo(contentLengt);
+				};
+				Path destination = URLConnections.downloadIntoTempFile(connection, copyListener);
+				assertThat(destination)
+					.exists()
+					.isRegularFile()
+					.hasContent(content);
+
+				Files.delete(destination);
+			}
+
+			List<Long> downloadSizesMatchingFullDownload = downloadSizes.stream()
+				.filter(l -> l == contentLengt)
+				.collect(Collectors.toList());
+
+			assertThat(downloadSizesMatchingFullDownload.size()).isEqualTo(1);
+
+			List<Long> downloadSizesBiggerThanContentLength = downloadSizes.stream()
+				.filter(l -> l > contentLengt)
+				.collect(Collectors.toList());
+
+			assertThat(downloadSizesBiggerThanContentLength)
+				.isEmpty();
+		}
+
 
 		@ParameterizedTest(name = "blocks: {0}")
 		@ValueSource(ints = {0,1,4,20,100})
