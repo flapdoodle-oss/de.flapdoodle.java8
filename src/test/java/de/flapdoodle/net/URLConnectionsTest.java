@@ -38,8 +38,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 class URLConnectionsTest {
 
@@ -209,6 +208,78 @@ class URLConnectionsTest {
 
 			assertThat(downloadSizesBiggerThanContentLength)
 				.isEmpty();
+		}
+
+
+		@ParameterizedTest(name = "blocks: {0}")
+		@ValueSource(ints = {1,2,4})
+		public void downloadShouldFailIfContentLengthDoesNotMatch(int blocks) throws IOException {
+			int httpPort = Net.freeServerPort();
+			String content=String.join("", Collections.nCopies(blocks*1000, UUID.randomUUID().toString()));
+			long contentLengt = content.getBytes(StandardCharsets.UTF_8).length;
+
+			HttpServers.Listener listener=(session) -> {
+				if (session.getUri().equals("/toShort")) {
+					return Optional.of(HttpServers.response(200, "text/text", content.getBytes(StandardCharsets.UTF_8), content.getBytes(StandardCharsets.UTF_8).length*2));
+				}
+				if (session.getUri().equals("/toLong")) {
+					return Optional.of(HttpServers.response(200, "text/text", content.getBytes(StandardCharsets.UTF_8), content.getBytes(StandardCharsets.UTF_8).length/2));
+				}
+				return Optional.empty();
+			};
+
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(httpPort, listener)) {
+
+				try {
+					URLConnection connection = new URL("http://localhost:"+httpPort+"/toShort?foo=bar").openConnection();
+					URLConnections.downloadIntoTempFile(connection, (url, bytesCopied, downloadContentLength) -> {
+					});
+					fail("should not reach this");
+				} catch (IllegalArgumentException iax) {
+					assertThat(iax.getLocalizedMessage()).contains("partial");
+				}
+
+				// looks like URLConnection Impl does only read to content-length size if provided
+				boolean weCanFakeNanoHttpToSendMoreStuffThanInContentLength=false;
+				if (weCanFakeNanoHttpToSendMoreStuffThanInContentLength) {
+					try {
+						URLConnection connection = new URL("http://localhost:"+httpPort+"/toLong?foo=bar").openConnection();
+						URLConnections.downloadIntoTempFile(connection, (url, bytesCopied, downloadContentLength) -> {
+						});
+						fail("should not reach this");
+					} catch (IllegalArgumentException iax) {
+						assertThat(iax.getLocalizedMessage()).contains("partial");
+					}
+				}
+
+			}
+		}
+
+		@ParameterizedTest(name = "blocks: {0}")
+		@ValueSource(ints = {1,2,4})
+		public void shouldNotFailIfCalledTwice(int blocks) throws IOException {
+			int httpPort = Net.freeServerPort();
+			String content=String.join("", Collections.nCopies(blocks*1000, UUID.randomUUID().toString()));
+			long contentLengt = content.getBytes(StandardCharsets.UTF_8).length;
+
+			HttpServers.Listener listener=(session) -> {
+				if (session.getUri().equals("/stuff")) {
+					return Optional.of(HttpServers.response(200, "text/text", content.getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(httpPort, listener)) {
+				URLConnection connection = new URL("http://localhost:"+httpPort+"/stuff").openConnection();
+				URLConnections.downloadIntoTempFile(connection, (url, bytesCopied, downloadContentLength) -> {
+					assertThat(downloadContentLength).isEqualTo(contentLengt);
+				});
+
+				connection = new URL("http://localhost:"+httpPort+"/stuff").openConnection();
+				URLConnections.downloadIntoTempFile(connection, (url, bytesCopied, downloadContentLength) -> {
+					assertThat(downloadContentLength).isEqualTo(contentLengt);
+				});
+			}
 		}
 
 
