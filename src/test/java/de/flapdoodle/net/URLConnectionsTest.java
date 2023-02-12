@@ -29,10 +29,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.net.ssl.*;
+import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -67,6 +70,30 @@ class URLConnectionsTest {
 					.asString(StandardCharsets.UTF_8)
 					.isEqualTo(content);
 			}
+		}
+
+		@ParameterizedTest(name = "blocks: {0}")
+		@ValueSource(ints = {0,1,4,20,100})
+		public void downloadShouldBeMovedToDestinationOnSuccess(int blocks) throws IOException {
+			int httpPort = Net.freeServerPort();
+			String content=String.join("", Collections.nCopies(blocks, UUID.randomUUID().toString()));
+
+			Path destination = Files.createTempFile("moveToThisFile", "");
+			Files.delete(destination);
+
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(httpPort, (session) -> Optional.empty())) {
+				URLConnection connection = new URL("http://localhost:123/toLong?foo=bar").openConnection();
+				URLConnections.downloadTo(connection, destination, url -> {
+					Path downloadMock = Files.createTempFile("moveThis", "");
+					Files.write(downloadMock, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING);
+					return downloadMock;
+				});
+			}
+
+			assertThat(destination)
+				.exists()
+				.isRegularFile()
+				.hasContent(content);
 		}
 
 		@ParameterizedTest(name = "blocks: {0}")

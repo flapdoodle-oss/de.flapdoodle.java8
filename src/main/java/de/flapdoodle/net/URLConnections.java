@@ -18,17 +18,17 @@ package de.flapdoodle.net;
 
 import de.flapdoodle.checks.Preconditions;
 import de.flapdoodle.types.Optionals;
+import de.flapdoodle.types.ThrowingFunction;
 import de.flapdoodle.types.ThrowingSupplier;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -78,6 +78,10 @@ public class URLConnections {
 		return os.toByteArray();
 	}
 
+	public static void downloadIntoFile(URLConnection connection, Path destination, DownloadCopyListener copyListener) throws IOException {
+		downloadTo(connection, destination, c -> downloadIntoTempFile(c, copyListener));
+	}
+
 	public static Path downloadIntoTempFile(URLConnection connection) throws IOException {
 		return downloadIntoTempFile(connection, (url, bytesCopied, contentLength) -> {});
 	}
@@ -86,7 +90,7 @@ public class URLConnections {
 		Path tempFile = java.nio.file.Files.createTempFile("download", "");
 		boolean downloadSucceeded=false;
 		try {
-			downloadIntoFile(connection, tempFile, copyListener);
+			downloadAndCopy(connection, () -> new BufferedOutputStream(Files.newOutputStream(tempFile.toFile().toPath())), copyListener);
 			downloadSucceeded=true;
 			return tempFile;
 		} finally {
@@ -96,8 +100,10 @@ public class URLConnections {
 		}
 	}
 
-	public static void downloadIntoFile(URLConnection connection, Path tempFile, DownloadCopyListener copyListener) throws IOException {
-		downloadAndCopy(connection, () -> new BufferedOutputStream(Files.newOutputStream(tempFile.toFile().toPath())), copyListener);
+	protected static <E extends Exception> void downloadTo(URLConnection connection, Path destination, ThrowingFunction<URLConnection, Path, E> urlToTempFile) throws IOException,E {
+		Preconditions.checkArgument(!Files.exists(destination), "destination exists: %s",destination);
+		Path tempFile = urlToTempFile.apply(connection);
+		Files.move(tempFile, destination, StandardCopyOption.ATOMIC_MOVE);
 	}
 
 	private static <E extends Exception> void downloadAndCopy(URLConnection connection, ThrowingSupplier<BufferedOutputStream, E> output, DownloadCopyListener copyListener) throws IOException, E {
