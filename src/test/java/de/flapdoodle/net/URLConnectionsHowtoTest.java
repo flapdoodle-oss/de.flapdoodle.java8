@@ -35,7 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class URLConnectionsHowtoTest {
 	@RegisterExtension
-	static Recording recording = Recorder.with("URLConnections.md", TabSize.spaces(2));
+	static Recording recording = Recorder.with("URLConnections.md", TabSize.spaces(2))
+		.renderTo("docs/URLConnections.md");
 
 	@Test
 	public void connectionAndDownloadToByteArray() throws IOException {

@@ -35,7 +35,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class NetHowtoTest {
 	@RegisterExtension
-	static Recording recording = Recorder.with("Net.md", TabSize.spaces(2));
+	static Recording recording = Recorder.with("Net.md", TabSize.spaces(2))
+		.renderTo("docs/Net.md");
+
+	@Test
+	public void isLocalHostIPv6() throws IOException {
+		recording.begin();
+		boolean isIpv6 = Net.localhostIsIPv6();
+		recording.end();
+	}
 
 	@Test
 	public void freeServerPort() throws IOException {

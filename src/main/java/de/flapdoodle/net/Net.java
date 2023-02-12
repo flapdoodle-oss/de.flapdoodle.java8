@@ -25,8 +25,28 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Net {
+	private static final Logger logger=Logger.getLogger(Net.class.getName());
+
+	private static final String NO_LOCALHOST_ERROR_MESSAGE = "We could not detect if localhost is IPv4 or IPv6. " +
+		"Sometimes there is no entry for localhost. " +
+		"If 'ping localhost' does not work, it could help to add the right entry in your hosts configuration file.";
+	private static final int IPV4_LENGTH = 4;
+
+	public static boolean localhostIsIPv6() throws UnknownHostException {
+		try {
+			InetAddress addr = getLocalHost();
+			byte[] ipAddr = addr.getAddress();
+			return ipAddr.length > IPV4_LENGTH;
+		} catch (UnknownHostException ux) {
+			logger.log(Level.SEVERE, NO_LOCALHOST_ERROR_MESSAGE, ux);
+			throw ux;
+		}
+	}
+
 	public static int freeServerPort() throws IOException {
 		return freeServerPort(getLocalHost());
 	}

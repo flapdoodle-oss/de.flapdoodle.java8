@@ -16,5 +16,5 @@ Stable (Maven Central Repository, Released: 12.02.2023 - wait 24hrs for [maven c
 		<version>1.3.1</version>
 	</dependency>
 
-### [Documentation](src/docs/HowTo.md)
+### [Documentation](HowTo.md)
 
