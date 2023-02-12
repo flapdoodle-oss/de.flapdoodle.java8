@@ -16,22 +16,19 @@
  */
 package de.flapdoodle.net;
 
-import de.flapdoodle.testdoc.Recorder;
-import de.flapdoodle.testdoc.Recording;
-import de.flapdoodle.testdoc.TabSize;
 import de.flapdoodle.types.Pair;
 import fi.iki.elonen.NanoHTTPD;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import javax.net.ssl.*;
-import java.io.File;
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
-import java.net.*;
+import java.net.Proxy;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,6 +64,32 @@ class URLConnectionsTest {
 				assertThat(response)
 					.asString(StandardCharsets.UTF_8)
 					.isEqualTo(content);
+			}
+		}
+
+
+		@ParameterizedTest(name = "blocks: {0}")
+		@ValueSource(ints = {0,1,4,20,100})
+		public void downloadIntoFile(int blocks, @TempDir Path tempDir) throws IOException {
+			String content=String.join("", Collections.nCopies(blocks, UUID.randomUUID().toString()));
+			Path tempFile = tempDir.resolve("tempFile");
+
+			HttpServers.Listener listener = session -> {
+				if (session.getUri().equals("/test")) {
+					return Optional.of(HttpServers.response(200, "text/text", content.getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(Net.freeServerPort(), listener)) {
+				URLConnection connection = URLConnections.urlConnectionOf(server.urlOf("test"));
+				URLConnections.downloadIntoFile(connection, tempFile, (url, bytesCopied, contentLength) -> {
+
+				});
+
+				assertThat(tempFile)
+					.exists()
+					.hasContent(content);
 			}
 		}
 
@@ -140,31 +163,55 @@ class URLConnectionsTest {
 				.isEmpty();
 		}
 
-
 		@ParameterizedTest(name = "blocks: {0}")
-		@ValueSource(ints = {0,1,4,20,100})
-		public void downloadIntoFile(int blocks, @TempDir Path tempDir) throws IOException {
-			String content=String.join("", Collections.nCopies(blocks, UUID.randomUUID().toString()));
-			Path tempFile = tempDir.resolve("tempFile");
+		@ValueSource(ints = {1,2,4})
+		public void downloadWithoutContentLengthShouldWorkToo(int blocks) throws IOException {
+			int httpPort = Net.freeServerPort();
+			String content=String.join("", Collections.nCopies(blocks*1000, UUID.randomUUID().toString()));
+			long contentLengt = content.getBytes(StandardCharsets.UTF_8).length;
 
-			HttpServers.Listener listener = session -> {
-				if (session.getUri().equals("/test")) {
-					return Optional.of(HttpServers.response(200, "text/text", content.getBytes(StandardCharsets.UTF_8)));
+			HttpServers.Listener listener=(session) -> {
+				if (session.getUri().equals("/download")) {
+					return Optional.of(HttpServers.chunkedResponse(200, "text/text", content.getBytes(StandardCharsets.UTF_8)));
 				}
 				return Optional.empty();
 			};
 
-			try (HttpServers.HttpServer server = new HttpServers.HttpServer(Net.freeServerPort(), listener)) {
-				URLConnection connection = URLConnections.urlConnectionOf(server.urlOf("test"));
-				URLConnections.downloadIntoFile(connection, tempFile, (url, bytesCopied, contentLength) -> {
+			List<Long> downloadSizes = new ArrayList<>();
 
-				});
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(httpPort, listener)) {
+				URLConnection connection = new URL("http://localhost:"+httpPort+"/download?foo=bar").openConnection();
 
-				assertThat(tempFile)
+				URLConnections.DownloadCopyListener copyListener=(url, bytesCopied, downloadContentLength) -> {
+					downloadSizes.add(bytesCopied);
+					assertThat(downloadContentLength).isEqualTo(-1);
+				};
+				Path destination = URLConnections.downloadIntoTempFile(connection, copyListener);
+				assertThat(destination)
 					.exists()
-					.hasContent(content);
+						.isRegularFile()
+							.hasContent(content);
+
+				Files.delete(destination);
 			}
+
+			List<Long> downloadSizesMatchingFullDownload = downloadSizes.stream()
+				.filter(l -> l == contentLengt)
+				.collect(Collectors.toList());
+
+			assertThat(downloadSizesMatchingFullDownload)
+				.size()
+				.isEqualTo(1);
+
+			List<Long> downloadSizesBiggerThanContentLength = downloadSizes.stream()
+				.filter(l -> l > contentLengt)
+				.collect(Collectors.toList());
+
+			assertThat(downloadSizesBiggerThanContentLength)
+				.isEmpty();
 		}
+
+
 	}
 
 	@Nested
