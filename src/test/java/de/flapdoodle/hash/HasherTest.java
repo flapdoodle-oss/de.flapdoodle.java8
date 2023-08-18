@@ -14,28 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.flapdoodle.compare;
+package de.flapdoodle.hash;
 
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.function.Function;
+import org.junit.jupiter.api.Test;
 
-public class Comparators {
-	
-	public static <S,D> Comparator<S> matching(Function<S, Optional<D>> mapper, Comparator<D> comparator) {
-		return (left, right) -> {
-			Optional<D> matchLeft = mapper.apply(left);
-			Optional<D> matchRight = mapper.apply(right);
-			if (matchLeft.isPresent() && matchRight.isPresent()) {
-				return comparator.compare(matchLeft.get(), matchRight.get());
-			}
-			if (matchLeft.isPresent()) {
-				return -1;
-			}
-			if (matchRight.isPresent()) {
-				return 1;
-			}
-			return 0;
-		};
+import static org.assertj.core.api.Assertions.assertThat;
+
+class HasherTest {
+	@Test
+	public void sha256Hash() {
+		String result = Hasher.instance().update("hello").hashAsString();
+		assertThat(result).isEqualTo("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+	}
+
+	@Test
+	public void md5Hash() {
+		String result = Hasher.md5Instance().update("hello").hashAsString();
+		assertThat(result).isEqualTo("5d41402abc4b2a76b9719d911017c592");
 	}
 }
