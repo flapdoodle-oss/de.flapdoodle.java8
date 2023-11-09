@@ -16,6 +16,8 @@
  */
 package de.flapdoodle.types;
 
+import de.flapdoodle.checks.Preconditions;
+import de.flapdoodle.reflection.TypeInfo;
 import org.immutables.value.Value;
 
 import java.util.function.Function;
@@ -44,5 +46,35 @@ public abstract class Pair<FIRST, SECOND> {
 
 	public static <FIRST, SECOND> Pair<FIRST,SECOND> of(FIRST first, SECOND second) {
 		return ImmutablePair.of(first, second);
+	}
+
+	@Value.Immutable
+	public static abstract class PairTypeInfo<FIRST, SECOND> implements TypeInfo<Pair<FIRST, SECOND>> {
+		@Value.Parameter
+		public abstract TypeInfo<FIRST> first();
+		@Value.Parameter
+		public abstract TypeInfo<SECOND> second();
+
+		@Override
+		public boolean isInstance(Object instance) {
+			return instance instanceof Pair
+				&& first().isInstance(((Pair<?, ?>) instance).first())
+				&& second().isInstance(((Pair<?, ?>) instance).second());
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public Pair<FIRST, SECOND> cast(Object instance) {
+			Preconditions.checkArgument(isInstance(instance), "type mismatch: %s is not a %s", instance, this);
+			return (Pair<FIRST, SECOND>) instance;
+		}
+	}
+
+	public static <FIRST, SECOND> TypeInfo<Pair<FIRST, SECOND>> typeInfo(TypeInfo<FIRST> first, TypeInfo<SECOND> second) {
+		return ImmutablePairTypeInfo.of(first, second);
+	}
+
+	public static <FIRST, SECOND> TypeInfo<Pair<FIRST, SECOND>> typeInfo(Class<FIRST> first, Class<SECOND> second) {
+		return typeInfo(TypeInfo.of(first), TypeInfo.of(second));
 	}
 }
