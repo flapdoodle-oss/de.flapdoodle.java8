@@ -13,7 +13,7 @@ Stable (Maven Central Repository, Released: 09.11.2023 - wait 24hrs for [maven c
 	<dependency>
 		<groupId>de.flapdoodle.java8</groupId>
 		<artifactId>de.flapdoodle.java8</artifactId>
-		<version>1.4.0</version>
+		<version>1.4.1</version>
 	</dependency>
 
 ### [Documentation](HowTo.md)
