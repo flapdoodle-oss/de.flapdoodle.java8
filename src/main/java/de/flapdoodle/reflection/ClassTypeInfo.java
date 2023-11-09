@@ -19,7 +19,7 @@ package de.flapdoodle.reflection;
 import org.immutables.value.Value;
 
 @Value.Immutable
-abstract class ClassTypeInfo<T> implements TypeInfo<T> {
+public abstract class ClassTypeInfo<T> implements TypeInfo<T> {
 	@Value.Parameter
 	public abstract Class<T> type();
 
