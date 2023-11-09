@@ -18,7 +18,6 @@ package de.flapdoodle.collections;
 
 import de.flapdoodle.reflection.TypeInfo;
 import de.flapdoodle.types.Pair;
-import org.immutables.value.Value;
 
 import java.util.Set;
 
@@ -27,7 +26,7 @@ public interface TypedMap<K> {
 
 	Set<Pair<K, ? extends TypeInfo<?>>> keySet();
 
-	static <K> ImmutableTypedMap<K> empty() {
+	static <K> ImmutableTypedMap<K> immutable() {
 		return ImmutableTypedMap.empty();
 	}
 

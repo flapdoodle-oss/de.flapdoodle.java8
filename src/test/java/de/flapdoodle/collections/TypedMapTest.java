@@ -17,6 +17,7 @@
 package de.flapdoodle.collections;
 
 import de.flapdoodle.reflection.TypeInfo;
+import de.flapdoodle.types.Pair;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -28,11 +29,29 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TypedMapTest {
 
+	@Test
+	void immutableToMutableAndBack() {
+		ImmutableTypedMap<String> testee = TypedMap.<String>immutable()
+			.add(TypeInfo.of(String.class), "foo", "bar")
+			.add(Pair.typeInfo(String.class, Double.class),"bar", Pair.of("x", 2.0));
+
+		MutableTypedMap<String> mutable = testee.asMutable();
+
+		assertThat(mutable.keySet())
+			.containsExactlyElementsOf(testee.keySet());
+
+		TypedMap<String> copy = mutable.asImmutable();
+
+		assertThat(copy).isEqualTo(testee);
+		assertThat(copy.keySet())
+			.containsExactlyElementsOf(testee.keySet());
+	}
+
 	@Nested
 	class Immutable {
 		@Test
 		void addEntryToEmptyMap() {
-			ImmutableTypedMap<String> testee = TypedMap.<String>empty()
+			ImmutableTypedMap<String> testee = TypedMap.<String>immutable()
 				.add(TypeInfo.of(Double.class), "foo", 123.0);
 
 			assertThat(testee.get(TypeInfo.of(Double.class), "foo"))
@@ -42,7 +61,7 @@ class TypedMapTest {
 		@Test
 		void keyCollision() {
 			assertThatThrownBy(() -> {
-				TypedMap.<String>empty()
+				TypedMap.<String>immutable()
 					.add(TypeInfo.of(Double.class), "foo", 123.0)
 					.add(TypeInfo.of(Double.class), "foo", 12.0);
 			}).isInstanceOf(IllegalArgumentException.class)
