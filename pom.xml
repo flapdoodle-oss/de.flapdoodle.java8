@@ -13,7 +13,7 @@
     <groupId>de.flapdoodle.java8</groupId>
     <artifactId>de.flapdoodle.java8</artifactId>
     <name>Flapdoodle Java8 Stuff</name>
-    <version>1.4.2</version>
+    <version>1.4.3-SNAPSHOT</version>
 
     <description>java8s</description>
     <url>http://github.com/flapdoodle-oss/de.flapdoodle.java8</url>
@@ -39,7 +39,7 @@
         <connection>scm:git:git@github.com:flapdoodle-oss/de.flapdoodle.java8.git</connection>
         <developerConnection>scm:git:git@github.com:flapdoodle-oss/de.flapdoodle.java8.git</developerConnection>
         <url>git@github.com:flapdoodle-oss/de.flapdoodle.java8.git</url>
-        <tag>de.flapdoodle.java8-1.4.2</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
