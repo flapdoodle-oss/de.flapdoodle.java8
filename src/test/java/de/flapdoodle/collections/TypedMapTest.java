@@ -18,6 +18,7 @@ package de.flapdoodle.collections;
 
 import de.flapdoodle.reflection.TypeInfo;
 import de.flapdoodle.types.Pair;
+import org.assertj.core.util.Maps;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -56,6 +57,18 @@ class TypedMapTest {
 
 			assertThat(testee.get(TypeInfo.of(Double.class), "foo"))
 				.isEqualTo(123.0);
+		}
+
+		@Test
+		void addAllEntriesToEmptyMap() {
+			ImmutableTypedMap<String> testee = TypedMap.<String>immutable()
+				.add(TypeInfo.of(Double.class), "foo", 123.0)
+				.addAll(TypeInfo.of(Integer.class), Maps.newHashMap("foo", 123));
+
+			assertThat(testee.get(TypeInfo.of(Double.class), "foo"))
+				.isEqualTo(123.0);
+			assertThat(testee.get(TypeInfo.of(Integer.class), "foo"))
+				.isEqualTo(123);
 		}
 
 		@Test
