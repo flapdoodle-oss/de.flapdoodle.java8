@@ -21,13 +21,21 @@ import java.util.function.Function;
 
 public abstract class Types {
 
+	/**
+	 * see {@link de.flapdoodle.reflection.TypeInfo}
+	 */
+	@Deprecated
 	public static <T> Optional<T> ifInstance(Object value, Class<T> type) {
 		if (type.isInstance(value)) {
 			return Optional.of(type.cast (value));
 		}
 		return Optional.empty();
 	}
-	
+
+	/**
+	 * see {@link de.flapdoodle.reflection.TypeInfo}
+	 */
+	@Deprecated
 	public static <S,D> Function<S, Optional<D>> ifInstance(Class<D> type) {
 		return (s) -> ifInstance(s, type);
 	}

@@ -19,6 +19,8 @@ package de.flapdoodle.reflection;
 import org.immutables.value.Value;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public interface TypeInfo<T> {
 	@Value.Auxiliary
@@ -27,11 +29,22 @@ public interface TypeInfo<T> {
 	@Value.Auxiliary
 	boolean isInstance(Object instance);
 
+	@Value.Auxiliary
+	default Optional<T> ifInstance(Object instance) {
+		return isInstance(instance)
+			? Optional.of((T) instance)
+			: Optional.empty();
+	}
+
 	static <T> TypeInfo<T> of(Class<T> type) {
 		return ClassTypeInfo.of(type);
 	}
 
 	static <T> TypeInfo<List<T>> listOf(TypeInfo<T> type) {
 		return ListTypeInfo.of(type);
+	}
+
+	static <K, V> TypeInfo<Map<K, V>> mapOf(TypeInfo<K> key, TypeInfo<V> value) {
+		return MapTypeInfo.of(key, value);
 	}
 }
