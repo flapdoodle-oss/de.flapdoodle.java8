@@ -33,6 +33,10 @@ public abstract class ClassTypeInfo<T> implements TypeInfo<T> {
 		return type().isInstance(instance);
 	}
 
+	@Override
+	public boolean isAssignable(TypeInfo<?> other) {
+		return other instanceof ClassTypeInfo && type().isAssignableFrom(((ClassTypeInfo<?>) other).type());
+	}
 	static <T> ClassTypeInfo<T> of(Class<T> type) {
 		return ImmutableClassTypeInfo.of(type);
 	}

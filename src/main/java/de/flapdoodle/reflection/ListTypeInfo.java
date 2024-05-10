@@ -37,6 +37,11 @@ public abstract class ListTypeInfo<T> implements TypeInfo<List<T>> {
 		return instance instanceof List && ((List<?>) instance).stream().allMatch(elements()::isInstance);
 	}
 
+	@Override
+	public boolean isAssignable(TypeInfo<?> other) {
+		return other instanceof ListTypeInfo && elements().isAssignable(((ListTypeInfo<?>) other).elements());
+	}
+	
 	static <T> ListTypeInfo<T> of(TypeInfo<T> type) {
 		return ImmutableListTypeInfo.of(type);
 	}

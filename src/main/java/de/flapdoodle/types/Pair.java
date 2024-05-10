@@ -62,6 +62,13 @@ public abstract class Pair<FIRST, SECOND> {
 				&& second().isInstance(((Pair<?, ?>) instance).second());
 		}
 
+		@Override
+		public boolean isAssignable(TypeInfo<?> other) {
+			return other instanceof PairTypeInfo
+				&& first().isAssignable(((PairTypeInfo<?, ?>) other).first())
+				&& second().isAssignable(((PairTypeInfo<?, ?>) other).second());
+		}
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public Pair<FIRST, SECOND> cast(Object instance) {

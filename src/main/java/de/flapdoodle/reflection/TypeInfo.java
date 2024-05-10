@@ -30,6 +30,9 @@ public interface TypeInfo<T> {
 	boolean isInstance(Object instance);
 
 	@Value.Auxiliary
+	boolean isAssignable(TypeInfo<?> other);
+
+	@Value.Auxiliary
 	default Optional<T> ifInstance(Object instance) {
 		return isInstance(instance)
 			? Optional.of((T) instance)

@@ -63,4 +63,13 @@ class TypeInfoTest {
 			Pair.of("bar", 12)
 		))).isTrue();
 	}
+
+	@Test
+	void checkAssignable() {
+		TypeInfo<List<Pair<String, Integer>>> testee = TypeInfo.listOf(Pair.typeInfo(String.class, Integer.class));
+		TypeInfo<List<Pair<String, Object>>> other = TypeInfo.listOf(Pair.typeInfo(String.class, Object.class));
+
+		assertThat(testee.isAssignable(other)).isFalse();
+		assertThat(other.isAssignable(testee)).isTrue();
+	}
 }

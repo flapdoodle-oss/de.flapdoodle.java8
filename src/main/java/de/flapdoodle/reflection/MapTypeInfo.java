@@ -42,6 +42,12 @@ public abstract class MapTypeInfo<K, V> implements TypeInfo<Map<K, V>> {
 			.allMatch(entry -> key().isInstance(entry.getKey()) && value().isInstance(entry.getValue()));
 	}
 
+	@Override
+	public boolean isAssignable(TypeInfo<?> other) {
+		return other instanceof MapTypeInfo
+			&& key().isAssignable(((MapTypeInfo<?, ?>) other).key())
+			&& value().isAssignable(((MapTypeInfo<?, ?>) other).value());
+	}
 	static <K, V> MapTypeInfo<K, V> of(TypeInfo<K> key, TypeInfo<V> value) {
 		return ImmutableMapTypeInfo.of(key, value);
 	}
