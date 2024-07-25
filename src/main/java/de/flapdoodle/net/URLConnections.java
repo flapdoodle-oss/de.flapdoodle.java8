@@ -25,10 +25,7 @@ import java.io.*;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.file.CopyOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -103,7 +100,11 @@ public class URLConnections {
 	protected static <E extends Exception> void downloadTo(URLConnection connection, Path destination, ThrowingFunction<URLConnection, Path, E> urlToTempFile) throws IOException,E {
 		Preconditions.checkArgument(!Files.exists(destination), "destination exists: %s",destination);
 		Path tempFile = urlToTempFile.apply(connection);
-		Files.move(tempFile, destination, StandardCopyOption.ATOMIC_MOVE);
+		try {
+			Files.move(tempFile, destination, StandardCopyOption.ATOMIC_MOVE);
+		} catch (AtomicMoveNotSupportedException ex) {
+			Files.move(tempFile, destination, StandardCopyOption.REPLACE_EXISTING);
+		}
 	}
 
 	private static <E extends Exception> void downloadAndCopy(URLConnection connection, ThrowingSupplier<BufferedOutputStream, E> output, DownloadCopyListener copyListener) throws IOException, E {
