@@ -28,7 +28,6 @@ import java.net.URLConnection;
 import java.nio.file.*;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.OptionalLong;
 
 public class URLConnections {
 
@@ -100,6 +99,11 @@ public class URLConnections {
 	protected static <E extends Exception> void downloadTo(URLConnection connection, Path destination, ThrowingFunction<URLConnection, Path, E> urlToTempFile) throws IOException,E {
 		Preconditions.checkArgument(!Files.exists(destination), "destination exists: %s",destination);
 		Path tempFile = urlToTempFile.apply(connection);
+		move(tempFile, destination);
+	}
+
+	//VisibleForTest
+	protected static void move(Path tempFile, Path destination) throws IOException {
 		try {
 			Files.move(tempFile, destination, StandardCopyOption.ATOMIC_MOVE);
 		} catch (AtomicMoveNotSupportedException ex) {

@@ -18,6 +18,7 @@ package de.flapdoodle.net;
 
 import de.flapdoodle.types.Pair;
 import fi.iki.elonen.NanoHTTPD;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -32,6 +33,7 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -114,6 +116,39 @@ class URLConnectionsTest {
 				.exists()
 				.isRegularFile()
 				.hasContent(content);
+		}
+
+		@Test
+		public void moveMustWork(@TempDir Path tempDir) throws IOException {
+			Path source = tempDir.resolve(UUID.randomUUID().toString());
+			Path destination = tempDir.resolve("dest-"+UUID.randomUUID());
+
+			Files.write(source, "TEST".getBytes(StandardCharsets.UTF_8));
+
+			URLConnections.move(source, destination);
+
+			assertThat(source).doesNotExist();
+			
+			assertThat(destination)
+				.content(StandardCharsets.UTF_8)
+				.isEqualTo("TEST");
+		}
+
+		@Test
+		@Disabled
+		public void moveMustWorkIfAtomicMoveFails(@TempDir Path tempDir) throws IOException {
+			Path source = tempDir.resolve(UUID.randomUUID().toString());
+			Path destination = Paths.get("/<path-to-different-device>/"+UUID.randomUUID());
+
+			Files.write(source, "TEST".getBytes(StandardCharsets.UTF_8));
+
+			URLConnections.move(source, destination);
+
+			assertThat(source).doesNotExist();
+
+			assertThat(destination)
+				.content(StandardCharsets.UTF_8)
+				.isEqualTo("TEST");
 		}
 
 		@ParameterizedTest(name = "blocks: {0}")
