@@ -38,6 +38,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
@@ -366,6 +367,33 @@ class URLConnectionsTest {
 		}
 
 		@Test
+		@Disabled("usage of system properties")
+		public void connectToHttpServerWithProxyBecauseSystemPropertiesAreSet() throws IOException {
+			int port = Net.freeServerPort();
+
+			HttpServers.Listener listener = session -> {
+				if (session.getUri().equals("http://localhost:" + port + "/test")) {
+					return Optional.of(HttpServers.response(200, "text/text", "dummy".getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(port, listener)) {
+				System.setProperty("http.proxyHost", server.getHostname());
+				System.setProperty("http.proxyPort", "" + server.getListeningPort());
+				System.setProperty("http.nonProxyHosts", "");
+
+				URLConnection connection = URLConnections.urlConnectionOf(server.urlOf("test"));
+
+				byte[] response = URLConnections.downloadIntoByteArray(connection);
+
+				assertThat(response)
+					.asString(StandardCharsets.UTF_8)
+					.isEqualTo("dummy");
+			}
+		}
+
+		@Test
 		public void connectToHttpServerWithBasicAuthProxy() throws IOException {
 			int port = Net.freeServerPort();
 
@@ -426,6 +454,43 @@ class URLConnectionsTest {
 		}
 
 		@Test
+		@Disabled("usage of system properties")
+		public void connectToHttpsServerWithProxyBecauseSystemPropertiesAreSet() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+			int port = Net.freeServerPort();
+
+			HttpServers.Listener listener = session -> {
+				if (session.getUri().equals("/test")) {
+					return Optional.of(HttpServers.response(200, "text/text", "dummy".getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+			AtomicReference<String> lastConnection=new AtomicReference<>(null);
+			HttpServers.HttpsProxyServer.HttpsProxySessionListener proxyListener = session -> {
+				lastConnection.set(session.host()+":"+session.port());
+			};
+
+			try (HttpServers.HttpsServer httpsServer = new HttpServers.HttpsServer(port, listener)) {
+				try (HttpServers.HttpsProxyServer proxyServer = new HttpServers.HttpsProxyServer(port + 1, proxyListener)) {
+					System.setProperty("https.proxyHost", proxyServer.getHostname());
+					System.setProperty("https.proxyPort", "" + proxyServer.getListeningPort());
+					System.setProperty("http.nonProxyHosts", "");
+
+					HttpsURLConnection connection = (HttpsURLConnection) URLConnections.urlConnectionOf(httpsServer.urlOf("test"));
+					connection.setSSLSocketFactory(Net.acceptAllSSLContext().getSocketFactory());
+
+					byte[] response = URLConnections.downloadIntoByteArray(connection);
+
+					assertThat(response)
+						.asString(StandardCharsets.UTF_8)
+						.isEqualTo("dummy");
+
+					assertThat(lastConnection.get())
+						.isEqualTo(httpsServer.getHostname()+":"+httpsServer.getListeningPort());
+				}
+			}
+		}
+
+		@Test
 		public void connectToHttpsServerWithProxy() throws IOException, NoSuchAlgorithmException, KeyManagementException {
 			int port = Net.freeServerPort();
 
@@ -450,7 +515,6 @@ class URLConnectionsTest {
 				}
 			}
 		}
-
 		/**
 		 * if the destination is just a http url, then the header set in ${@link URLConnections#urlConnectionOf(URL, Proxy)}
 		 * is enough to let the request pass (if username and password matches)
@@ -459,6 +523,8 @@ class URLConnectionsTest {
 		 * has to ask for user and password or has to set the header to the proxy connection
 		 *
 		 * AFAIK this is not possible with the API available with java 8
+		 *
+		 * Update: https://stackoverflow.com/questions/41806422/java-web-start-unable-to-tunnel-through-proxy-since-java-8-update-111
 		 */
 		@SuppressWarnings("unchecked") @Test
 		public void connectToHttpsServerWithProxyWithBasicAuth() throws IOException, NoSuchAlgorithmException, KeyManagementException {
