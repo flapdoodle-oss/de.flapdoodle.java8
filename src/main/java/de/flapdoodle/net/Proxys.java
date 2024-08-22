@@ -18,7 +18,9 @@ package de.flapdoodle.net;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.SocketAddress;
+import java.util.Optional;
 
 public class Proxys {
 

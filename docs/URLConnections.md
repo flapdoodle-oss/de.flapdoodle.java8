@@ -17,3 +17,7 @@ URLConnections.downloadIntoFile(connection, file, (url, bytesCopied, contentLeng
 
 });
 ```
+                        
+### Enable Env Variable HttpProxy Detection
+
+set system property `de.flapdoodle.net.useEnvProxySelector` to true to enable `http_proxy`, `https_proxy` and `no_proxy` env variable support. 

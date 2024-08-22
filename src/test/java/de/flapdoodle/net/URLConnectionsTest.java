@@ -367,33 +367,6 @@ class URLConnectionsTest {
 		}
 
 		@Test
-		@Disabled("usage of system properties")
-		public void connectToHttpServerWithProxyBecauseSystemPropertiesAreSet() throws IOException {
-			int port = Net.freeServerPort();
-
-			HttpServers.Listener listener = session -> {
-				if (session.getUri().equals("http://localhost:" + port + "/test")) {
-					return Optional.of(HttpServers.response(200, "text/text", "dummy".getBytes(StandardCharsets.UTF_8)));
-				}
-				return Optional.empty();
-			};
-
-			try (HttpServers.HttpServer server = new HttpServers.HttpServer(port, listener)) {
-				System.setProperty("http.proxyHost", server.getHostname());
-				System.setProperty("http.proxyPort", "" + server.getListeningPort());
-				System.setProperty("http.nonProxyHosts", "");
-
-				URLConnection connection = URLConnections.urlConnectionOf(server.urlOf("test"));
-
-				byte[] response = URLConnections.downloadIntoByteArray(connection);
-
-				assertThat(response)
-					.asString(StandardCharsets.UTF_8)
-					.isEqualTo("dummy");
-			}
-		}
-
-		@Test
 		public void connectToHttpServerWithBasicAuthProxy() throws IOException {
 			int port = Net.freeServerPort();
 
@@ -426,6 +399,66 @@ class URLConnectionsTest {
 					.isEqualTo("dummy");
 			}
 		}
+
+		@Test
+		@Disabled("usage of system properties")
+		public void connectToHttpServerWithProxyBecauseSystemPropertiesAreSet() throws IOException {
+			int port = Net.freeServerPort();
+
+			HttpServers.Listener listener = session -> {
+				if (session.getUri().equals("http://localhost:" + port + "/test")) {
+					return Optional.of(HttpServers.response(200, "text/text", "dummy".getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(port, listener)) {
+				System.setProperty("http.proxyHost", server.getHostname());
+				System.setProperty("http.proxyPort", "" + server.getListeningPort());
+				System.setProperty("http.nonProxyHosts", "");
+
+				URLConnection connection = URLConnections.urlConnectionOf(server.urlOf("test"));
+
+				byte[] response = URLConnections.downloadIntoByteArray(connection);
+
+				assertThat(response)
+					.asString(StandardCharsets.UTF_8)
+					.isEqualTo("dummy");
+			}
+		}
+
+		/**
+		 * set env http_proxy to http://localhost:12345 and URLConnections.USE_ENV_PROXY_SELECTOR system property to true
+		 */
+		@Test
+		@Disabled("usage of system properties and system env")
+		public void connectToHttpServerWithProxyFromEnv() throws IOException {
+			int port = 12345; //Net.freeServerPort();
+
+			HttpServers.Listener listener = session -> {
+				if (session.getUri().equals("http://localhost:" + port + "/test")) {
+					return Optional.of(HttpServers.response(200, "text/text", "dummy".getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+
+			try (HttpServers.HttpServer server = new HttpServers.HttpServer(port, listener)) {
+				assertThat(System.getenv().get("http_proxy"))
+					.isEqualTo("http://"+server.getHostname()+":"+server.getListeningPort());
+				assertThat(System.getenv().get("no_proxy"))
+					.isNull();
+				assertThat(System.getProperty(URLConnections.USE_ENV_PROXY_SELECTOR))
+					.isEqualTo("true");
+
+				URLConnection connection = URLConnections.urlConnectionOf(server.urlOf("test"));
+
+				byte[] response = URLConnections.downloadIntoByteArray(connection);
+
+				assertThat(response)
+					.asString(StandardCharsets.UTF_8)
+					.isEqualTo("dummy");
+			}
+		}
 	}
 
 	@Nested
@@ -450,43 +483,6 @@ class URLConnectionsTest {
 				assertThat(response)
 					.asString(StandardCharsets.UTF_8)
 					.isEqualTo("dummy");
-			}
-		}
-
-		@Test
-		@Disabled("usage of system properties")
-		public void connectToHttpsServerWithProxyBecauseSystemPropertiesAreSet() throws IOException, NoSuchAlgorithmException, KeyManagementException {
-			int port = Net.freeServerPort();
-
-			HttpServers.Listener listener = session -> {
-				if (session.getUri().equals("/test")) {
-					return Optional.of(HttpServers.response(200, "text/text", "dummy".getBytes(StandardCharsets.UTF_8)));
-				}
-				return Optional.empty();
-			};
-			AtomicReference<String> lastConnection=new AtomicReference<>(null);
-			HttpServers.HttpsProxyServer.HttpsProxySessionListener proxyListener = session -> {
-				lastConnection.set(session.host()+":"+session.port());
-			};
-
-			try (HttpServers.HttpsServer httpsServer = new HttpServers.HttpsServer(port, listener)) {
-				try (HttpServers.HttpsProxyServer proxyServer = new HttpServers.HttpsProxyServer(port + 1, proxyListener)) {
-					System.setProperty("https.proxyHost", proxyServer.getHostname());
-					System.setProperty("https.proxyPort", "" + proxyServer.getListeningPort());
-					System.setProperty("http.nonProxyHosts", "");
-
-					HttpsURLConnection connection = (HttpsURLConnection) URLConnections.urlConnectionOf(httpsServer.urlOf("test"));
-					connection.setSSLSocketFactory(Net.acceptAllSSLContext().getSocketFactory());
-
-					byte[] response = URLConnections.downloadIntoByteArray(connection);
-
-					assertThat(response)
-						.asString(StandardCharsets.UTF_8)
-						.isEqualTo("dummy");
-
-					assertThat(lastConnection.get())
-						.isEqualTo(httpsServer.getHostname()+":"+httpsServer.getListeningPort());
-				}
 			}
 		}
 
@@ -567,6 +563,86 @@ class URLConnectionsTest {
 							.isInstanceOf(IOException.class)
 							.hasMessageContaining("Unable to tunnel through proxy. Proxy returns \"HTTP/1.0 407 Proxy Authorization Required\"");
 					}
+				}
+			}
+		}
+
+		@Test
+		@Disabled("usage of system properties")
+		public void connectToHttpsServerWithProxyBecauseSystemPropertiesAreSet() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+			int port = Net.freeServerPort();
+
+			HttpServers.Listener listener = session -> {
+				if (session.getUri().equals("/test")) {
+					return Optional.of(HttpServers.response(200, "text/text", "dummy".getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+			AtomicReference<String> lastConnection=new AtomicReference<>(null);
+			HttpServers.HttpsProxyServer.HttpsProxySessionListener proxyListener = session -> {
+				lastConnection.set(session.host()+":"+session.port());
+			};
+
+			try (HttpServers.HttpsServer httpsServer = new HttpServers.HttpsServer(port, listener)) {
+				try (HttpServers.HttpsProxyServer proxyServer = new HttpServers.HttpsProxyServer(port + 1, proxyListener)) {
+					System.setProperty("https.proxyHost", proxyServer.getHostname());
+					System.setProperty("https.proxyPort", "" + proxyServer.getListeningPort());
+					System.setProperty("http.nonProxyHosts", "");
+
+					HttpsURLConnection connection = (HttpsURLConnection) URLConnections.urlConnectionOf(httpsServer.urlOf("test"));
+					connection.setSSLSocketFactory(Net.acceptAllSSLContext().getSocketFactory());
+
+					byte[] response = URLConnections.downloadIntoByteArray(connection);
+
+					assertThat(response)
+						.asString(StandardCharsets.UTF_8)
+						.isEqualTo("dummy");
+
+					assertThat(lastConnection.get())
+						.isEqualTo(httpsServer.getHostname()+":"+httpsServer.getListeningPort());
+				}
+			}
+		}
+
+		/**
+		 * set env https_proxy to http://localhost:12346 and URLConnections.USE_ENV_PROXY_SELECTOR system property to true
+		 */
+		@Test
+		@Disabled("usage of system properties and system env")
+		public void connectToHttpServerWithProxyFromEnv() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+			int port = 12345; // Net.freeServerPort();
+
+			HttpServers.Listener listener = session -> {
+				if (session.getUri().equals("/test")) {
+					return Optional.of(HttpServers.response(200, "text/text", "dummy".getBytes(StandardCharsets.UTF_8)));
+				}
+				return Optional.empty();
+			};
+			AtomicReference<String> lastConnection=new AtomicReference<>(null);
+			HttpServers.HttpsProxyServer.HttpsProxySessionListener proxyListener = session -> {
+				lastConnection.set(session.host()+":"+session.port());
+			};
+
+			try (HttpServers.HttpsServer httpsServer = new HttpServers.HttpsServer(port, listener)) {
+				try (HttpServers.HttpsProxyServer proxyServer = new HttpServers.HttpsProxyServer(port + 1, proxyListener)) {
+					assertThat(System.getenv().get("https_proxy"))
+						.isEqualTo("http://"+proxyServer.getHostname()+":"+proxyServer.getListeningPort());
+					assertThat(System.getenv().get("no_proxy"))
+						.isNull();
+					assertThat(System.getProperty(URLConnections.USE_ENV_PROXY_SELECTOR))
+						.isEqualTo("true");
+
+					HttpsURLConnection connection = (HttpsURLConnection) URLConnections.urlConnectionOf(httpsServer.urlOf("test"));
+					connection.setSSLSocketFactory(Net.acceptAllSSLContext().getSocketFactory());
+
+					byte[] response = URLConnections.downloadIntoByteArray(connection);
+
+					assertThat(response)
+						.asString(StandardCharsets.UTF_8)
+						.isEqualTo("dummy");
+
+					assertThat(lastConnection.get())
+						.isEqualTo(httpsServer.getHostname()+":"+httpsServer.getListeningPort());
 				}
 			}
 		}

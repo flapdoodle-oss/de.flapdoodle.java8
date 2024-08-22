@@ -39,6 +39,11 @@ public class URLConnectionsHowtoTest {
 		.renderTo("docs/URLConnections.md");
 
 	@Test
+	public void enableEnvVariableProxyUsage() {
+		recording.output("envVar", URLConnections.USE_ENV_PROXY_SELECTOR);
+	}
+
+	@Test
 	public void connectionAndDownloadToByteArray() throws IOException {
 		String content="content";
 

@@ -28,10 +28,16 @@ import java.net.URLConnection;
 import java.nio.file.*;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class URLConnections {
+	private static final Logger logger=Logger.getLogger(URLConnections.class.getName());
 
-	static final int BUFFER_LENGTH = 1024 * 8 * 8;
+	public static final String USE_ENV_PROXY_SELECTOR = "de.flapdoodle.net.useEnvProxySelector";
+
+	private static final int BUFFER_LENGTH = 1024 * 8 * 8;
+	private static final boolean useEnvProxySelector = System.getProperty(USE_ENV_PROXY_SELECTOR, "false").equals("true");
 
 	public static URLConnection urlConnectionOf(URL url) throws IOException {
 		return urlConnectionOf(url, Optional.empty());
@@ -42,7 +48,15 @@ public class URLConnections {
 	}
 
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-	private static URLConnection urlConnectionOf(URL url, Optional<Proxy> proxy) throws IOException {
+	private static URLConnection urlConnectionOf(URL url, Optional<Proxy> providedProxy) throws IOException {
+		logger.log(Level.FINE,USE_ENV_PROXY_SELECTOR+"="+useEnvProxySelector);
+
+		Optional<Proxy> proxy = providedProxy.isPresent()
+			? providedProxy
+			: useEnvProxySelector
+			? ProxySelector.envVariableProxySelector().select(url).map(ProxyFactory::create)
+			: Optional.empty();
+
 		URLConnection openConnection = Optionals.with(proxy)
 			.map(url::openConnection)
 			.orElseGet(url::openConnection);
