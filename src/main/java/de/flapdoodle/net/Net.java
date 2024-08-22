@@ -16,7 +16,13 @@
  */
 package de.flapdoodle.net;
 
-import javax.net.ssl.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -25,11 +31,9 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Net {
-	private static final Logger logger=Logger.getLogger(Net.class.getName());
+	private static final Logger logger= LoggerFactory.getLogger(Net.class);
 
 	private static final String NO_LOCALHOST_ERROR_MESSAGE = "We could not detect if localhost is IPv4 or IPv6. " +
 		"Sometimes there is no entry for localhost. " +
@@ -42,7 +46,7 @@ public class Net {
 			byte[] ipAddr = addr.getAddress();
 			return ipAddr.length > IPV4_LENGTH;
 		} catch (UnknownHostException ux) {
-			logger.log(Level.SEVERE, NO_LOCALHOST_ERROR_MESSAGE, ux);
+			logger.error(NO_LOCALHOST_ERROR_MESSAGE, ux);
 			throw ux;
 		}
 	}

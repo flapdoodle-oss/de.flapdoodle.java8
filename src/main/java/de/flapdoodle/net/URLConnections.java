@@ -20,6 +20,8 @@ import de.flapdoodle.checks.Preconditions;
 import de.flapdoodle.types.Optionals;
 import de.flapdoodle.types.ThrowingFunction;
 import de.flapdoodle.types.ThrowingSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Proxy;
@@ -29,10 +31,9 @@ import java.nio.file.*;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class URLConnections {
-	private static final Logger logger=Logger.getLogger(URLConnections.class.getName());
+	private static final Logger logger= LoggerFactory.getLogger(URLConnections.class);
 
 	public static final String USE_ENV_PROXY_SELECTOR = "de.flapdoodle.net.useEnvProxySelector";
 
@@ -49,7 +50,7 @@ public class URLConnections {
 
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 	private static URLConnection urlConnectionOf(URL url, Optional<Proxy> providedProxy) throws IOException {
-		logger.log(Level.FINE,USE_ENV_PROXY_SELECTOR+"="+useEnvProxySelector);
+		logger.debug(USE_ENV_PROXY_SELECTOR + "={}", useEnvProxySelector);
 
 		Optional<Proxy> proxy = providedProxy.isPresent()
 			? providedProxy

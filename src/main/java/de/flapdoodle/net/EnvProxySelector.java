@@ -1,27 +1,27 @@
 package de.flapdoodle.net;
 
 import de.flapdoodle.checks.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static java.util.regex.Pattern.quote;
 
 public class EnvProxySelector implements ProxySelector {
-	private static final Logger logger=Logger.getLogger(EnvProxySelector.class.getName());
+	private static final Logger logger= LoggerFactory.getLogger(EnvProxySelector.class.getName());
 
 	private final ProxySelector httpProxySelector;
 	private final ProxySelector httpsProxySelector;
 
 	private EnvProxySelector(ProxySelector httpProxySelector, ProxySelector httpsProxySelector) {
-		logger.log(Level.INFO,"http proxy selector {0}", httpProxySelector);
-		logger.log(Level.INFO,"https proxy selector {0}", httpsProxySelector);
+		logger.info("http proxy selector {}", httpProxySelector);
+		logger.info("https proxy selector {}", httpsProxySelector);
 		this.httpProxySelector = httpProxySelector;
 		this.httpsProxySelector = httpsProxySelector;
 	}
