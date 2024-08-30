@@ -20,6 +20,7 @@ import de.flapdoodle.checks.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.Proxy;
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
@@ -32,6 +33,10 @@ import static java.util.regex.Pattern.quote;
 public class EnvProxySelector implements ProxySelector {
 	private static final Logger logger= LoggerFactory.getLogger(EnvProxySelector.class.getName());
 
+	private final static String HTTP_PROXY_ENV_VARIABLE="http_proxy";
+	private final static String HTTPS_PROXY_ENV_VARIABLE="https_proxy";
+	private final static String NO_PROXY_ENV_VARIABLE="no_proxy";
+
 	private final ProxySelector httpProxySelector;
 	private final ProxySelector httpsProxySelector;
 
@@ -40,6 +45,11 @@ public class EnvProxySelector implements ProxySelector {
 		logger.info("https proxy selector {}", httpsProxySelector);
 		this.httpProxySelector = httpProxySelector;
 		this.httpsProxySelector = httpsProxySelector;
+	}
+
+	public static boolean envVariablesSet() {
+		Map<String, String> env = System.getenv();
+		return env.containsKey(HTTP_PROXY_ENV_VARIABLE) || env.containsKey(HTTPS_PROXY_ENV_VARIABLE);
 	}
 
 	@Override
@@ -182,9 +192,9 @@ public class EnvProxySelector implements ProxySelector {
 	}
 
 	public static ProxySelector with(Map<String, String> env) {
-		String http_proxy = env.get("http_proxy");
-		String https_proxy = env.get("https_proxy");
-		String no_proxy = env.get("no_proxy");
+		String http_proxy = env.get(HTTP_PROXY_ENV_VARIABLE);
+		String https_proxy = env.get(HTTPS_PROXY_ENV_VARIABLE);
+		String no_proxy = env.get(NO_PROXY_ENV_VARIABLE);
 
 		if (http_proxy != null || https_proxy != null) {
 			Optional<Pattern> noProxyPattern = noProxy(no_proxy);

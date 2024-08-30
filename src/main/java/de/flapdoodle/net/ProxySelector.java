@@ -16,7 +16,9 @@
  */
 package de.flapdoodle.net;
 
-import java.net.URI;
+import org.slf4j.Logger;
+
+import java.net.Proxy;
 import java.net.URL;
 import java.util.Optional;
 

@@ -48,6 +48,22 @@ public class URLConnections {
 		return urlConnectionOf(url, Optional.of(proxy));
 	}
 
+	private static Optional<Proxy> envVariableProxySelectorHint() {
+		if (EnvProxySelector.envVariablesSet()) {
+			if (System.getProperty("http.proxyHost")!=null || System.getProperty("https.proxyHost")!=null) {
+				logger.info(
+					"\n"
+						+ "*****************************\n"
+						+ "proxy configuration hint: proxy env variables and system properties set.\n"
+						+ "use env proxy configuration without setting system properties by\n"
+						+ "set '"+USE_ENV_PROXY_SELECTOR+"=true'\n"
+						+ "see https://github.com/flapdoodle-oss/de.flapdoodle.java8/blob/master/docs/URLConnections.md#enable-env-variable-httpproxy-detection\n"
+						+ "*****************************\n");
+			}
+		}
+		return Optional.empty();
+	}
+
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 	private static URLConnection urlConnectionOf(URL url, Optional<Proxy> providedProxy) throws IOException {
 		logger.debug(USE_ENV_PROXY_SELECTOR + "={}", useEnvProxySelector);
@@ -56,7 +72,7 @@ public class URLConnections {
 			? providedProxy
 			: useEnvProxySelector
 			? ProxySelector.envVariableProxySelector().select(url).map(ProxyFactory::create)
-			: Optional.empty();
+			: envVariableProxySelectorHint();
 
 		URLConnection openConnection = Optionals.with(proxy)
 			.map(url::openConnection)
