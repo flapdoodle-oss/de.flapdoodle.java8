@@ -61,17 +61,17 @@ public class Net {
 		}
 	}
 
+	/**
+	 * get loopback address
+	 */
 	public static InetAddress getLocalHost() throws UnknownHostException {
-		InetAddress ret = InetAddress.getLocalHost();
-		// see https://www.linuxtopia.org/online_books/linux_system_administration/debian_linux_guides/debian_linux_reference_guide/ch-gateway.en_009.html
-		// call to getLocalHost() can give 127.0.1.1 which is not the same as localhost and will lead to trouble
-		// if used to connect services
-		if (!ret.isLoopbackAddress() || ret.getHostAddress().equals("127.0.1.1")) {
-			ret = localHostByName();
-		}
-		return ret;
+		return InetAddress.getByName("");
 	}
 
+	@Deprecated
+	/**
+	 * @see #getLocalHost()
+	 */
 	public static InetAddress localHostByName() throws UnknownHostException {
 		InetAddress ret;
 		ret = InetAddress.getByName("localhost");
