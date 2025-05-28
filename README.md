@@ -8,12 +8,12 @@ usefull stuff for java8 - dependency free
 
 ### Maven
 
-Stable (Maven Central Repository, Released: 26.05.2025 - wait 24hrs for [maven central](http://repo1.maven.org/maven2/de/flapdoodle/java8/de.flapdoodle.java8/maven-metadata.xml))
+Stable (Maven Central Repository, Released: 28.05.2025 - wait 24hrs for [maven central](http://repo1.maven.org/maven2/de/flapdoodle/java8/de.flapdoodle.java8/maven-metadata.xml))
 
 	<dependency>
 		<groupId>de.flapdoodle.java8</groupId>
 		<artifactId>de.flapdoodle.java8</artifactId>
-		<version>1.7.1</version>
+		<version>1.7.2</version>
 	</dependency>
 
 ### [Documentation](HowTo.md)
